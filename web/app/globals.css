@@ -2427,3 +2427,109 @@ body {
     min-height: auto;
   }
 }
+
+/* Home screen: keep the daily summary and today's suggestions lightweight. */
+@media (min-width: 901px) {
+  .content:has(> .welcome) {
+    grid-template-rows: minmax(150px, 1.2fr) minmax(108px, .58fr) minmax(130px, .72fr);
+    gap: 11px;
+  }
+
+  .content:has(> .welcome) .dashboard-grid {
+    gap: 11px;
+  }
+
+  .content:has(> .welcome) .dashboard-grid > .card {
+    padding: 12px 17px;
+    border-radius: 18px;
+  }
+
+  .content:has(> .welcome) .card-heading {
+    align-items: flex-start;
+  }
+
+  .content:has(> .welcome) .card h3 {
+    margin-top: 3px;
+    font-size: 20px;
+  }
+
+  .content:has(> .welcome) .score-row {
+    margin-top: 7px;
+    gap: 7px;
+  }
+
+  .content:has(> .welcome) .score-ring {
+    width: 35px;
+    height: 35px;
+    border-width: 2px;
+    font-size: 16px;
+  }
+
+  .content:has(> .welcome) .score small {
+    font-size: 9px;
+  }
+
+  .content:has(> .welcome) .observation h3 {
+    margin: 4px 0 3px;
+    font-size: clamp(17px, 1.35vw, 21px);
+  }
+
+  .content:has(> .welcome) .observation > p:last-child {
+    font-size: 10px;
+  }
+
+  .content:has(> .welcome) .section-heading {
+    margin-bottom: 6px;
+  }
+
+  .content:has(> .welcome) .section-heading h2 {
+    font-size: clamp(20px, 1.9vw, 26px);
+  }
+
+  .content:has(> .welcome) .action-grid {
+    gap: 11px;
+  }
+
+  .content:has(> .welcome) .action-card {
+    padding: 11px 16px;
+    border-radius: 16px;
+  }
+
+  .content:has(> .welcome) .action-card h3 {
+    margin: 7px 0 0;
+    font-size: clamp(18px, 1.55vw, 22px);
+  }
+
+  .content:has(> .welcome) .action-card > p:not(.eyebrow) {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .content:has(> .welcome) .action-card button {
+    left: 16px;
+    right: 16px;
+    bottom: 7px;
+    padding-top: 5px;
+  }
+
+  .content:has(> .welcome) .action-orb {
+    top: 9px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .daily-card {
+    padding-block: 18px;
+  }
+
+  .section-block {
+    margin-top: 34px;
+  }
+
+  .action-card {
+    min-height: 190px;
+  }
+}

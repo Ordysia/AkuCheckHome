@@ -43,8 +43,8 @@ konsultacji z wykwalifikowanym specjalistą.
 
 Katalog `instructional-videos/` zawiera zatwierdzone materiały pokazujące sposób
 wykonania samoobserwacji używanej w aplikacji. Film
-`Jak_zbadac_pulsy_powierzchowne_i_glebokie_v6.mp4` przedstawia sposób badania
-12 pulsów powierzchownych i głębokich. Materiał obowiązuje w wersji `v6` od
+`Jak_zbadac_12_pulsow_obie_rece_final_v2.mp4` przedstawia sposób badania
+12 pulsów na obu rękach. Materiał obowiązuje w wersji `final_v2` od
 `2026-08-02`.
 
 Film ma charakter edukacyjny i nie zastępuje instruktażu ani konsultacji z

@@ -746,7 +746,7 @@ function PulseView({
           <span className="pulse-video-icon" aria-hidden="true">▶</span>
           <div>
             <p className="eyebrow green">FILM INSTRUKTAŻOWY</p>
-            <h3>Jak zbadać pulsy powierzchowne i głębokie?</h3>
+            <h3>Jak zbadać 12 pulsów na obu rękach?</h3>
             <p>
               Obejrzyj instrukcję przed rozpoczęciem i wykonaj badanie we
               własnym tempie. Następnie wpisz 12 odczytów poniżej.
@@ -766,7 +766,7 @@ function PulseView({
         {showPulseVideo && (
           <div className="pulse-video-player" id="pulse-instruction-video">
             <video controls preload="metadata" playsInline>
-              <source src="/media/badanie-12-pulsow-v6.mp4" type="video/mp4" />
+              <source src="/media/badanie-12-pulsow-final-v2.mp4" type="video/mp4" />
               Twoja przeglądarka nie obsługuje odtwarzania filmu MP4.
             </video>
             <p>

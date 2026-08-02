@@ -2,8 +2,8 @@
 
 ## Badanie 12 pulsów
 
-- Plik: `Jak_zbadac_pulsy_powierzchowne_i_glebokie_v6.mp4`
-- Wersja: `v6`
+- Plik: `Jak_zbadac_12_pulsow_obie_rece_final_v2.mp4`
+- Wersja: `final_v2`
 - Data włączenia do bazy wiedzy: `2026-08-02`
 - Zastosowanie: instrukcja wykonania badania pulsów powierzchownych i głębokich
   przed zapisaniem 12 odczytów w AkuCheckHome.

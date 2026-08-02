@@ -93,12 +93,17 @@ export const entryExitBlockRules: EntryExitBlockRule[] = [
 ];
 
 function normalizePulseValues(values: Record<string, number>) {
-  return {
-    ...values,
+  const normalized: Record<string, number> = { ...values };
+  const aliases = {
     HT: values.HT ?? values.HE,
     KI: values.KI ?? values.KID,
     LV: values.LV ?? values.LIV,
+    SJ: values.SJ ?? values.TE,
   };
+  for (const [code, value] of Object.entries(aliases)) {
+    if (value !== undefined) normalized[code] = value;
+  }
+  return normalized;
 }
 
 function classifyDifference(difference: number): {

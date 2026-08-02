@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { LocalHealthStore, Scores } from "@/lib/health-data/model";
 import { getBreathingProtocol } from "./data/breathing-protocols";
 import { analyzeEntryExitBlocks } from "./data/pulse-entry-exit-rules";
 import {
@@ -9,30 +10,6 @@ import {
 } from "./data/organ-clock-rules";
 
 type View = "home" | "checkin" | "pulse" | "support" | "progress" | "rules";
-type Scores = {
-  sleep: number;
-  rested: number;
-  energy: number;
-  stress: number;
-  mood: number;
-  tension: number;
-};
-
-type LocalHealthStore = {
-  checkins: Record<
-    string,
-    {
-      scores: Scores;
-      bedtime: string;
-      wakeTime: string;
-      symptoms: string[];
-      otherSymptom: string;
-      savedAt: string;
-    }
-  >;
-  pulses: Record<string, { values: Record<string, number>; savedAt: string }>;
-};
-
 const STORAGE_KEY = "akucheckhome.health-data.v1";
 
 function localDateKey(date = new Date()) {

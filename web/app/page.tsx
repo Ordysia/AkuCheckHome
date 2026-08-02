@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { LocalHealthStore, Scores } from "@/lib/health-data/model";
+import {
+  claimLegacyHealthStore,
+  hasValidLegacyHealthStore,
+  readUserHealthStore,
+  writeUserHealthStore,
+} from "@/lib/health-data/storage";
 import { AuthGate } from "./auth-gate";
 import { getBreathingProtocol } from "./data/breathing-protocols";
 import { analyzeEntryExitBlocks } from "./data/pulse-entry-exit-rules";
@@ -10,24 +16,15 @@ import {
   getOrganClockGuidance,
 } from "./data/organ-clock-rules";
 
-type View = "home" | "wellbeing" | "checkin" | "pulse" | "support" | "progress" | "rules";
-const STORAGE_KEY = "akucheckhome.health-data.v1";
+type View = "home" | "entry" | "support" | "progress" | "rules";
+type EntryStep = "wellbeing" | "checkin" | "pulse" | "summary";
+type DraftScores = Partial<Scores>;
 
 function localDateKey(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function readLocalStore(): LocalHealthStore {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored) as LocalHealthStore;
-  } catch {
-    // A damaged local record should not prevent opening the application.
-  }
-  return { checkins: {}, pulses: {} };
 }
 
 const scoreLabels: Record<keyof Scores, string> = {
@@ -37,15 +34,6 @@ const scoreLabels: Record<keyof Scores, string> = {
   stress: "Stres",
   mood: "Nastrój",
   tension: "Napięcie",
-};
-
-const defaultScores: Scores = {
-  sleep: 3,
-  rested: 3,
-  energy: 3,
-  stress: 3,
-  mood: 3,
-  tension: 3,
 };
 
 const symptoms = [
@@ -82,19 +70,18 @@ const pulseHands = [
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "home", label: "Dzisiaj", icon: "⌂" },
-  { id: "wellbeing", label: "Samopoczucie", icon: "○" },
-  { id: "checkin", label: "Check-in", icon: "✓" },
-  { id: "pulse", label: "12 pulsów", icon: "∿" },
-  { id: "support", label: "Pomóż sobie", icon: "✦" },
-  { id: "progress", label: "Postępy", icon: "↗" },
+  { id: "entry", label: "Wpis", icon: "○" },
+  { id: "support", label: "Wsparcie", icon: "✦" },
+  { id: "progress", label: "Historia", icon: "↗" },
   { id: "rules", label: "Reguły", icon: "◇" },
 ];
+const mobileNavItems = navItems.filter((item) => item.id !== "rules");
 
 export default function Home() {
   return (
     <AuthGate>
       {(user, signOut) => (
-        <AkuCheckApp userEmail={user.email ?? "Użytkownik"} signOut={signOut} />
+        <AkuCheckApp key={user.id} userId={user.id} userEmail={user.email ?? "Użytkownik"} signOut={signOut} />
       )}
     </AuthGate>
   );
@@ -102,9 +89,11 @@ export default function Home() {
 
 function AkuCheckApp({
   userEmail,
+  userId,
   signOut,
 }: {
   userEmail: string;
+  userId: string;
   signOut: () => Promise<void>;
 }) {
   const today = localDateKey();
@@ -115,86 +104,116 @@ function AkuCheckApp({
   })
     .format(new Date())
     .toUpperCase();
+  const [initialStore] = useState(() => readUserHealthStore(localStorage, userId));
+  const [selectedDate, setSelectedDate] = useState(today);
+  const initialCheckin = initialStore.checkins[selectedDate];
+  const initialPulse = initialStore.pulses[selectedDate];
+  const initialWellbeing = initialStore.wellbeing?.[selectedDate];
   const [view, setView] = useState<View>("home");
-  const [scores, setScores] = useState<Scores>(defaultScores);
-  const [bedtime, setBedtime] = useState("22:45");
-  const [wakeTime, setWakeTime] = useState("06:30");
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [otherSymptom, setOtherSymptom] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [pulseValues, setPulseValues] = useState<Record<string, number>>({});
-  const [pulseSaved, setPulseSaved] = useState(false);
+  const [entryStep, setEntryStep] = useState<EntryStep>("wellbeing");
+  const [scores, setScores] = useState<DraftScores>(() => initialCheckin?.scores ?? {});
+  const [bedtime, setBedtime] = useState(initialCheckin?.bedtime ?? "22:45");
+  const [wakeTime, setWakeTime] = useState(initialCheckin?.wakeTime ?? "06:30");
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(
+    initialCheckin?.symptoms ?? [],
+  );
+  const [otherSymptom, setOtherSymptom] = useState(initialCheckin?.otherSymptom ?? "");
+  const [saved, setSaved] = useState(Boolean(initialCheckin));
+  const [pulseValues, setPulseValues] = useState<Record<string, number>>(
+    initialPulse?.values ?? {},
+  );
+  const [pulseSaved, setPulseSaved] = useState(Boolean(initialPulse));
   const [completedActions, setCompletedActions] = useState<string[]>([]);
-  const [wellbeing, setWellbeing] = useState("");
-  const [wellbeingSaved, setWellbeingSaved] = useState(false);
-  const [history, setHistory] = useState<LocalHealthStore>({ checkins: {}, pulses: {}, wellbeing: {} });
+  const [wellbeing, setWellbeing] = useState(initialWellbeing?.text ?? "");
+  const [wellbeingSaved, setWellbeingSaved] = useState(Boolean(initialWellbeing));
+  const [history, setHistory] = useState<LocalHealthStore>(initialStore);
+  const [storageError, setStorageError] = useState("");
+  const [legacyAvailable, setLegacyAvailable] = useState(() =>
+    hasValidLegacyHealthStore(localStorage),
+  );
 
-  useEffect(() => {
-    const store = readLocalStore();
-    const checkin = store.checkins[today];
-    const pulse = store.pulses[today];
-    const wellbeingEntry = store.wellbeing?.[today];
-    setHistory(store);
+  const loadDate = (date: string) => {
+    const checkin = history.checkins[date];
+    const pulse = history.pulses[date];
+    const wellbeingEntry = history.wellbeing?.[date];
+    setSelectedDate(date);
+    setScores(checkin?.scores ?? {});
+    setBedtime(checkin?.bedtime ?? "22:45");
+    setWakeTime(checkin?.wakeTime ?? "06:30");
+    setSelectedSymptoms(checkin?.symptoms ?? []);
+    setOtherSymptom(checkin?.otherSymptom ?? "");
+    setSaved(Boolean(checkin));
+    setPulseValues(pulse?.values ?? {});
+    setPulseSaved(Boolean(pulse));
+    setWellbeing(wellbeingEntry?.text ?? "");
+    setWellbeingSaved(Boolean(wellbeingEntry));
+  };
 
-    if (checkin) {
-      setScores({ ...defaultScores, ...checkin.scores });
-      setBedtime(checkin.bedtime);
-      setWakeTime(checkin.wakeTime);
-      setSelectedSymptoms(checkin.symptoms);
-      setOtherSymptom(checkin.otherSymptom);
-      setSaved(true);
+  const openEntry = (step: EntryStep = "wellbeing") => {
+    setEntryStep(step);
+    setView("entry");
+  };
+
+  const persist = (store: LocalHealthStore) => {
+    try {
+      writeUserHealthStore(localStorage, userId, store);
+      setStorageError("");
+      setHistory({ ...store });
+      return true;
+    } catch {
+      setStorageError("Nie udało się bezpiecznie zapisać danych. Sprawdź dostępne miejsce i ustawienia przeglądarki.");
+      return false;
     }
+  };
 
-    if (pulse) {
-      setPulseValues(pulse.values);
-      setPulseSaved(true);
+  const importLegacyData = () => {
+    try {
+      claimLegacyHealthStore(localStorage, userId);
+      setLegacyAvailable(false);
+      window.location.reload();
+    } catch {
+      setStorageError("Nie udało się przenieść wcześniejszych danych. Stary zapis pozostał bez zmian.");
     }
-
-    if (wellbeingEntry) {
-      setWellbeing(wellbeingEntry.text);
-      setWellbeingSaved(true);
-    }
-  }, [today]);
+  };
 
   const saveCheckin = () => {
-    const store = readLocalStore();
-    store.checkins[today] = {
-      scores,
+    const completedScores = scores as Scores;
+    if (Object.keys(completedScores).length !== Object.keys(scoreLabels).length) return;
+    const store = readUserHealthStore(localStorage, userId);
+    store.checkins[selectedDate] = {
+      scores: completedScores,
       bedtime,
       wakeTime,
       symptoms: selectedSymptoms,
       otherSymptom,
       savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    setHistory({ ...store });
+    if (!persist(store)) return;
     setSaved(true);
-    setView("pulse");
+    setEntryStep("pulse");
   };
 
   const savePulses = () => {
-    const store = readLocalStore();
-    store.pulses[today] = {
+    const store = readUserHealthStore(localStorage, userId);
+    store.pulses[selectedDate] = {
       values: pulseValues,
       savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    setHistory({ ...store });
+    if (!persist(store)) return;
     setPulseSaved(true);
-    setView("support");
+    setEntryStep("summary");
   };
 
   const saveWellbeing = () => {
-    const store = readLocalStore();
+    const store = readUserHealthStore(localStorage, userId);
     store.wellbeing ??= {};
-    store.wellbeing[today] = {
+    store.wellbeing[selectedDate] = {
       text: wellbeing,
       savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    setHistory({ ...store });
+    if (!persist(store)) return;
     setWellbeingSaved(true);
-    setView("checkin");
+    setEntryStep("checkin");
   };
 
   const sleepDuration = useMemo(() => {
@@ -222,9 +241,15 @@ function AkuCheckApp({
   };
 
   const isViewCompleted = (itemView: View) =>
-    (itemView === "wellbeing" && wellbeingSaved) ||
-    (itemView === "checkin" && saved) ||
-    (itemView === "pulse" && pulseSaved);
+    itemView === "entry" && wellbeingSaved && saved;
+  const analysisScores: Scores = {
+    sleep: scores.sleep ?? 3,
+    rested: scores.rested ?? 3,
+    energy: scores.energy ?? 3,
+    stress: scores.stress ?? 3,
+    mood: scores.mood ?? 3,
+    tension: scores.tension ?? 3,
+  };
 
   return (
     <main className="app-shell">
@@ -253,9 +278,6 @@ function AkuCheckApp({
 
         <div className="desktop-account">
           <span className="nav-date">{formattedDate}</span>
-          <button className="language" aria-label="Zmień język">
-            PL
-          </button>
           <span className="avatar">{userEmail.slice(0, 2).toUpperCase()}</span>
           <span className="profile-copy">
             <strong>{userEmail.split("@")[0]}</strong>
@@ -268,13 +290,18 @@ function AkuCheckApp({
       <section className="main-area">
         <header className="topbar">
           <div>
-            <p className="eyebrow">{formattedDate}</p>
+            <label className="date-picker">
+              <span>Wybrany dzień</span>
+              <input
+                type="date"
+                value={selectedDate}
+                max={today}
+                onChange={(event) => loadDate(event.target.value)}
+              />
+            </label>
             <h1>{viewTitle(view)}</h1>
           </div>
           <div className="profile">
-            <button className="language" aria-label="Zmień język">
-              PL
-            </button>
             <span className="avatar">{userEmail.slice(0, 2).toUpperCase()}</span>
             <span className="profile-copy">
               <strong>{userEmail.split("@")[0]}</strong>
@@ -284,55 +311,56 @@ function AkuCheckApp({
         </header>
 
         <div className="content">
+          <aside className="local-data-note" aria-label="Informacja o zapisie danych">
+            <strong>Dane pozostają na tym urządzeniu.</strong>{" "}
+            Nie synchronizują się między urządzeniami i mogą zniknąć po wyczyszczeniu danych przeglądarki.
+          </aside>
+          {storageError && <p className="auth-message error" role="alert">{storageError}</p>}
+          {legacyAvailable && (
+            <aside className="card" aria-labelledby="legacy-data-title">
+              <h2 id="legacy-data-title">Wcześniejsze dane z tej przeglądarki</h2>
+              <p>
+                Znaleziono zapis utworzony przed rozdzieleniem danych między konta.
+                Przenieś go tylko wtedy, gdy należy do obecnie zalogowanego konta.
+              </p>
+              <button type="button" className="primary" onClick={importLegacyData}>
+                Przypisz wcześniejsze dane do tego konta
+              </button>
+            </aside>
+          )}
           {view === "home" && (
             <HomeView
               saved={saved}
               wellbeingSaved={wellbeingSaved}
               pulseSaved={pulseSaved}
-              setView={setView}
+              openEntry={openEntry}
+              openSupport={() => setView("support")}
             />
           )}
-          {view === "wellbeing" && (
-            <WellbeingView
-              value={wellbeing}
-              setValue={(value) => {
-                setWellbeing(value);
-                setWellbeingSaved(false);
+          {view === "entry" && (
+            <EntryFlow
+              step={entryStep}
+              setStep={setEntryStep}
+              wellbeingProps={{
+                value: wellbeing,
+                setValue: (value) => { setWellbeing(value); setWellbeingSaved(false); },
+                saved: wellbeingSaved,
+                save: saveWellbeing,
               }}
-              saved={wellbeingSaved}
-              save={saveWellbeing}
-            />
-          )}
-          {view === "checkin" && (
-            <CheckInView
-              scores={scores}
-              setScores={setScores}
-              bedtime={bedtime}
-              setBedtime={setBedtime}
-              wakeTime={wakeTime}
-              setWakeTime={setWakeTime}
-              sleepDuration={sleepDuration}
-              selectedSymptoms={selectedSymptoms}
-              toggleSymptom={toggleSymptom}
-              otherSymptom={otherSymptom}
-              setOtherSymptom={setOtherSymptom}
-              saved={saved}
-              save={saveCheckin}
-            />
-          )}
-          {view === "pulse" && (
-            <PulseView
-              pulseValues={pulseValues}
-              setPulseValues={setPulseValues}
-              saved={pulseSaved}
-              save={savePulses}
+              checkinProps={{
+                scores, setScores, bedtime, setBedtime, wakeTime, setWakeTime,
+                sleepDuration, selectedSymptoms, toggleSymptom, otherSymptom,
+                setOtherSymptom, saved, save: saveCheckin,
+              }}
+              pulseProps={{ pulseValues, setPulseValues, saved: pulseSaved, save: savePulses }}
+              onSupport={() => setView("support")}
             />
           )}
           {view === "support" && (
             <SupportView
               completedActions={completedActions}
               toggleAction={toggleAction}
-              scores={scores}
+              scores={analysisScores}
               bedtime={bedtime}
               wakeTime={wakeTime}
               symptoms={selectedSymptoms}
@@ -344,7 +372,7 @@ function AkuCheckApp({
               wellbeingSaved={wellbeingSaved}
             />
           )}
-          {view === "progress" && <ProgressView history={history} />}
+          {view === "progress" && <ProgressView history={history} openDate={(date) => { loadDate(date); openEntry("summary"); }} />}
           {view === "rules" && <RulesView />}
         </div>
 
@@ -355,7 +383,7 @@ function AkuCheckApp({
       </section>
 
       <nav className="mobile-nav" aria-label="Nawigacja mobilna">
-        {navItems.map((item) => (
+        {mobileNavItems.map((item) => (
           <button
             key={item.id}
             className={`${view === item.id ? "active" : ""}${isViewCompleted(item.id) ? " completed" : ""}`}
@@ -367,6 +395,67 @@ function AkuCheckApp({
         ))}
       </nav>
     </main>
+  );
+}
+
+function EntryFlow({
+  step,
+  setStep,
+  wellbeingProps,
+  checkinProps,
+  pulseProps,
+  onSupport,
+}: {
+  step: EntryStep;
+  setStep: (step: EntryStep) => void;
+  wellbeingProps: Parameters<typeof WellbeingView>[0];
+  checkinProps: Parameters<typeof CheckInView>[0];
+  pulseProps: Parameters<typeof PulseView>[0];
+  onSupport: () => void;
+}) {
+  const steps: Array<{ id: EntryStep; label: string; optional?: boolean }> = [
+    { id: "wellbeing", label: "Samopoczucie" },
+    { id: "checkin", label: "Check-in" },
+    { id: "pulse", label: "12 pulsów", optional: true },
+    { id: "summary", label: "Podsumowanie" },
+  ];
+  return (
+    <>
+      <header className="entry-header">
+        <div>
+          <p className="eyebrow green">PROWADZONY PRZEPŁYW</p>
+          <h2>Dzisiejszy wpis</h2>
+          <p>Przejdź po kolei lub wróć do dowolnego kroku. Badanie pulsów jest opcjonalne.</p>
+        </div>
+        <ol className="entry-steps" aria-label="Etapy dzisiejszego wpisu">
+          {steps.map((item, index) => (
+            <li key={item.id} className={step === item.id ? "active" : ""}>
+              <button type="button" aria-current={step === item.id ? "step" : undefined} onClick={() => setStep(item.id)}>
+                <span>{index + 1}</span>{item.label}{item.optional ? " (opcjonalnie)" : ""}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </header>
+      {step === "wellbeing" && <WellbeingView {...wellbeingProps} />}
+      {step === "checkin" && <CheckInView {...checkinProps} />}
+      {step === "pulse" && (
+        <>
+          <PulseView {...pulseProps} />
+          <button type="button" className="secondary skip-step" onClick={() => setStep("summary")}>Pomiń badanie pulsów →</button>
+        </>
+      )}
+      {step === "summary" && (
+        <EntrySummary
+          wellbeingSaved={wellbeingProps.saved}
+          checkinSaved={checkinProps.saved}
+          pulseSaved={pulseProps.saved}
+          pulseValues={pulseProps.pulseValues}
+          edit={setStep}
+          onSupport={onSupport}
+        />
+      )}
+    </>
   );
 }
 
@@ -421,12 +510,14 @@ function HomeView({
   saved,
   wellbeingSaved,
   pulseSaved,
-  setView,
+  openEntry,
+  openSupport,
 }: {
   saved: boolean;
   wellbeingSaved: boolean;
   pulseSaved: boolean;
-  setView: (view: View) => void;
+  openEntry: (step?: EntryStep) => void;
+  openSupport: () => void;
 }) {
   return (
     <>
@@ -440,12 +531,12 @@ function HomeView({
               : !saved
                 ? "Samopoczucie zapisane. Teraz uzupełnij krótki check-in."
                 : !pulseSaved
-                  ? "Check-in zapisany. Zostało badanie 12 pulsów."
+                  ? "Podstawowa część wpisu jest gotowa. Możesz opcjonalnie dodać badanie 12 pulsów."
                   : "Dzisiejsza ścieżka jest kompletna. Zobacz przygotowane propozycje wsparcia."}
           </p>
         </div>
-        <button className="primary" onClick={() => setView(!wellbeingSaved ? "wellbeing" : !saved ? "checkin" : !pulseSaved ? "pulse" : "support")}>
-          {!wellbeingSaved ? "Rozpocznij check-in" : !saved ? "Przejdź do check-in" : !pulseSaved ? "Przejdź do 12 pulsów" : "Zobacz propozycje"}
+        <button className="primary" onClick={() => wellbeingSaved && saved ? openSupport() : openEntry(!wellbeingSaved ? "wellbeing" : "checkin")}>
+          {!wellbeingSaved ? "Rozpocznij dzisiejszy wpis" : !saved ? "Kontynuuj wpis" : "Zobacz propozycje"}
           <span>→</span>
         </button>
       </section>
@@ -466,8 +557,8 @@ function HomeView({
 }
 
 function CheckInView(props: {
-  scores: Scores;
-  setScores: (scores: Scores) => void;
+  scores: DraftScores;
+  setScores: (scores: DraftScores) => void;
   bedtime: string;
   setBedtime: (value: string) => void;
   wakeTime: string;
@@ -584,6 +675,8 @@ function CheckInView(props: {
             {symptoms.map((item) => (
               <button
                 key={item}
+                type="button"
+                aria-pressed={props.selectedSymptoms.includes(item)}
                 className={
                   props.selectedSymptoms.includes(item)
                     ? "chip selected"
@@ -610,7 +703,10 @@ function CheckInView(props: {
           </label>
         </section>
 
-        <button className="primary save-button" onClick={props.save}>
+        {Object.keys(props.scores).length < Object.keys(scoreLabels).length && (
+          <p className="form-validation" role="status">Wybierz odpowiedź w każdej z sześciu skal, aby zapisać check-in.</p>
+        )}
+        <button className="primary save-button" disabled={Object.keys(props.scores).length < Object.keys(scoreLabels).length} onClick={props.save}>
           {props.saved ? "Zapisz zmiany" : "Zapisz dzisiejszy check-in"} →
         </button>
       </div>
@@ -666,21 +762,23 @@ function ScorePicker({
   onChange,
 }: {
   label: string;
-  value: number;
+  value?: number;
   low: string;
   high: string;
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="score-picker">
-      <strong>{label}</strong>
-      <div className="number-buttons">
+    <fieldset className="score-picker">
+      <legend>{label}</legend>
+      <div className="number-buttons" role="radiogroup" aria-label={label}>
         {[1, 2, 3, 4, 5].map((number) => (
           <button
             key={number}
             className={value === number ? "selected" : ""}
             onClick={() => onChange(number)}
             aria-label={`${label}: ${number}`}
+            aria-pressed={value === number}
+            type="button"
           >
             {number}
           </button>
@@ -690,7 +788,7 @@ function ScorePicker({
         <small>{low}</small>
         <small>{high}</small>
       </div>
-    </div>
+    </fieldset>
   );
 }
 
@@ -706,22 +804,6 @@ function PulseView({
   save: () => void;
 }) {
   const [showPulseVideo, setShowPulseVideo] = useState(false);
-  const liveBlocks = analyzeEntryExitBlocks(pulseValues);
-  const normalizedCode = (code: string) =>
-    code === "HE" ? "HT" : code === "KID" ? "KI" : code === "LIV" ? "LV" : code;
-  const blockStateFor = (code: string) => {
-    const normalized = normalizedCode(code);
-    const block = liveBlocks.find(
-      (item) =>
-        item.exitMeridian === normalized || item.entryMeridian === normalized,
-    );
-    if (!block) return undefined;
-    return {
-      role: block.exitMeridian === normalized ? ("exit" as const) : ("entry" as const),
-      difference: block.difference,
-      transition: block.transition,
-    };
-  };
 
   return (
     <>
@@ -777,29 +859,6 @@ function PulseView({
         )}
       </section>
 
-      {liveBlocks.length > 0 && (
-        <section className="pulse-block-alert" aria-live="polite">
-          <div>
-            <p className="eyebrow">WYKRYTE WZORCE WEJŚCIA–WYJŚCIA</p>
-            <strong>
-              {liveBlocks.length === 1
-                ? "Możliwy wzorzec bloku"
-                : `Możliwe wzorce bloków: ${liveBlocks.length}`}
-            </strong>
-          </div>
-          <div className="pulse-block-chips">
-            {liveBlocks.map((block) => (
-              <span
-                key={block.id}
-                className={`block-chip block-level-${block.difference}`}
-              >
-                {block.transition} · różnica {block.difference}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-
       <div className="pulse-hands">
         {pulseHands.map((hand) => (
           <section className={`card pulse-hand pulse-hand-${hand.id}`} key={hand.id}>
@@ -848,7 +907,6 @@ function PulseView({
                     key={code}
                     code={code}
                     value={pulseValues[code]}
-                    blockState={blockStateFor(code)}
                     change={(value) =>
                       setPulseValues({ ...pulseValues, [code]: value })
                     }
@@ -873,6 +931,50 @@ function PulseView({
         </button>
       </div>
     </>
+  );
+}
+
+function EntrySummary({
+  wellbeingSaved,
+  checkinSaved,
+  pulseSaved,
+  pulseValues,
+  edit,
+  onSupport,
+}: {
+  wellbeingSaved: boolean;
+  checkinSaved: boolean;
+  pulseSaved: boolean;
+  pulseValues: Record<string, number>;
+  edit: (step: EntryStep) => void;
+  onSupport: () => void;
+}) {
+  const blocks = pulseSaved ? analyzeEntryExitBlocks(pulseValues) : [];
+  return (
+    <section className="entry-summary" aria-labelledby="entry-summary-title">
+      <p className="eyebrow green">PODSUMOWANIE WPISU</p>
+      <h2 id="entry-summary-title">Twój zapis jest gotowy</h2>
+      <p>Sprawdź zapisane części. Interpretacja 12 pulsów jest pokazywana dopiero tutaj, po zakończeniu badania.</p>
+      <div className="summary-status-grid">
+        <button type="button" onClick={() => edit("wellbeing")}><strong>{wellbeingSaved ? "✓" : "○"} Samopoczucie</strong><span>{wellbeingSaved ? "Zapisane" : "Do uzupełnienia"}</span></button>
+        <button type="button" onClick={() => edit("checkin")}><strong>{checkinSaved ? "✓" : "○"} Check-in</strong><span>{checkinSaved ? "Zapisany" : "Do uzupełnienia"}</span></button>
+        <button type="button" onClick={() => edit("pulse")}><strong>{pulseSaved ? "✓" : "○"} 12 pulsów</strong><span>{pulseSaved ? "Zapisane" : "Pominięte — opcjonalne"}</span></button>
+      </div>
+      {pulseSaved && (
+        <div className="pulse-summary-result" aria-live="polite">
+          <h3>Podsumowanie Entry–Exit</h3>
+          {blocks.length === 0 ? (
+            <p>W zapisanych odczytach nie pojawiło się podejrzenie wzorca Entry–Exit.</p>
+          ) : (
+            <>
+              <p>{blocks.length === 1 ? "Pojawiło się jedno podejrzenie wzorca." : `Pojawiły się ${blocks.length} podejrzenia wzorców.`} To wynik edukacyjny, nie diagnoza.</p>
+              <ul>{blocks.map((block) => <li key={block.id}>{block.transition} · różnica {block.difference}</li>)}</ul>
+            </>
+          )}
+        </div>
+      )}
+      <button type="button" className="primary" onClick={onSupport}>Zobacz propozycje wsparcia →</button>
+    </section>
   );
 }
 
@@ -1118,13 +1220,23 @@ function SupportView({
       </section>
       <div className="support-list">
         {recommendations.map((recommendation, index) => (
-          <SupportDetail
-            key={recommendation.id}
-            number={String(index + 1).padStart(2, "0")}
-            {...recommendation}
-            completed={completedActions.includes(recommendation.id)}
-            toggle={toggleAction}
-          />
+          index === 0 ? (
+            <div className="primary-support" key={recommendation.id}>
+              <p className="eyebrow green">PIERWSZA PROPOZYCJA</p>
+              <SupportDetail
+                number="01" {...recommendation}
+                completed={completedActions.includes(recommendation.id)} toggle={toggleAction}
+              />
+            </div>
+          ) : (
+            <details className="support-more" key={recommendation.id}>
+              <summary>{String(index + 1).padStart(2, "0")} · {recommendation.title}<span>Pokaż szczegóły</span></summary>
+              <SupportDetail
+                number={String(index + 1).padStart(2, "0")} {...recommendation}
+                completed={completedActions.includes(recommendation.id)} toggle={toggleAction}
+              />
+            </details>
+          )
         ))}
       </div>
     </>
@@ -1260,8 +1372,13 @@ function SupportDetail({
   );
 }
 
-function ProgressView({ history }: { history: LocalHealthStore }) {
+function ProgressView({ history, openDate }: { history: LocalHealthStore; openDate: (date: string) => void }) {
   const checkinEntries = Object.entries(history.checkins).sort(([a], [b]) => a.localeCompare(b));
+  const allDates = [...new Set([
+    ...Object.keys(history.wellbeing ?? {}),
+    ...Object.keys(history.checkins),
+    ...Object.keys(history.pulses),
+  ])].sort((a, b) => b.localeCompare(a));
   const recentEntries = checkinEntries.slice(-7);
   const wellbeingCount = Object.keys(history.wellbeing ?? {}).length;
   const pulseCount = Object.keys(history.pulses).length;
@@ -1361,6 +1478,24 @@ function ProgressView({ history }: { history: LocalHealthStore }) {
           <article className="card compare-card"><span>05</span><h3>Opis samopoczucia</h3><p>Zestawiaj własne słowa z wynikami skal. Zapisane opisy: <strong>{wellbeingCount}</strong>.</p></article>
           <article className="card compare-card"><span>06</span><h3>Kierunek, nie ocena</h3><p>Za poprawę uznaj łagodny trend: więcej energii i snu, mniej stresu i napięcia. Nagłe pogorszenie skonsultuj ze specjalistą.</p></article>
         </div>
+      </section>
+      <section className="history-list" aria-labelledby="history-list-title">
+        <div className="section-heading">
+          <div><p className="eyebrow">WPISY W CZASIE</p><h2 id="history-list-title">Historia według dat</h2></div>
+        </div>
+        {allDates.length === 0 ? <p className="chart-empty">Nie ma jeszcze zapisanych dni.</p> : (
+          <ul>
+            {allDates.map((date) => (
+              <li key={date}>
+                <div>
+                  <strong>{new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${date}T12:00:00`))}</strong>
+                  <span>{history.wellbeing?.[date] ? "Samopoczucie · " : ""}{history.checkins[date] ? "Check-in · " : ""}{history.pulses[date] ? "12 pulsów" : ""}</span>
+                </div>
+                <button type="button" onClick={() => openDate(date)}>Otwórz wpis</button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   );
@@ -1517,12 +1652,10 @@ function ActionCard({
 
 function viewTitle(view: View) {
   return {
-    home: "Dzień dobry, Anno",
-    wellbeing: "Samopoczucie",
-    checkin: "Codzienny check-in",
-    pulse: "Badanie 12 pulsów",
+    home: "Dzień dobry",
+    entry: "Dzisiejszy wpis",
     support: "Pomóż sobie",
-    progress: "Twoje postępy",
+    progress: "Historia",
     rules: "Reguły aplikacji",
   }[view];
 }

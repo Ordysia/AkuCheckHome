@@ -64,11 +64,26 @@ export const wellbeingEntrySchema = z.object({
 
 export type WellbeingEntry = z.infer<typeof wellbeingEntrySchema>;
 
-export type LocalHealthStore = {
-  checkins: Record<string, DailyCheckin>;
-  pulses: Record<string, PulseMeasurement>;
-  wellbeing?: Record<string, WellbeingEntry>;
-};
+const dateKeySchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/);
+const MAX_LOCAL_DAYS = 3660;
+
+const datedRecords = <T extends z.ZodType>(valueSchema: T) =>
+  z.record(dateKeySchema, valueSchema).refine(
+    (records) => Object.keys(records).length <= MAX_LOCAL_DAYS,
+    `Magazyn może zawierać najwyżej ${MAX_LOCAL_DAYS} dni.`,
+  );
+
+export const localHealthStoreSchema = z.object({
+  checkins: datedRecords(dailyCheckinSchema),
+  pulses: datedRecords(pulseMeasurementSchema),
+  wellbeing: datedRecords(wellbeingEntrySchema).optional(),
+}).strict();
+
+export type LocalHealthStore = z.infer<typeof localHealthStoreSchema>;
+
+export function emptyLocalHealthStore(): LocalHealthStore {
+  return { checkins: {}, pulses: {} };
+}
 
 export function isCompletePulseValues(
   values: PartialPulseValues,

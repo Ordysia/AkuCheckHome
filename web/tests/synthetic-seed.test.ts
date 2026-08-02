@@ -13,7 +13,7 @@ import { analyzeEntryExitBlocks } from "../app/data/pulse-entry-exit-rules";
 import { generateSyntheticDataset } from "../scripts/synthetic/generator";
 import { syntheticPulseSessionSchema } from "../scripts/synthetic/model";
 import { openLocalSyntheticStore } from "../scripts/synthetic/storage";
-import { assertSyntheticSeedAllowed } from "../scripts/synthetic/safety";
+import { assertSupabaseTargetAllowed, assertSyntheticSeedAllowed } from "../scripts/synthetic/safety";
 
 test("default dataset contains 5 users and 10 days per user", () => {
   const dataset = generateSyntheticDataset();
@@ -149,6 +149,14 @@ test("production environment signals block the generator", () => {
     /disabled in production/,
   );
   assert.doesNotThrow(() => assertSyntheticSeedAllowed({ NODE_ENV: "test" }));
+});
+
+test("Supabase target requires an exact allowlisted origin and clean confirmation", () => {
+  const environment = { NODE_ENV: "test", ALLOW_SYNTHETIC_SEED: "true", ALLOW_SYNTHETIC_SUPABASE_URL: "https://safe-test.supabase.co" };
+  assert.doesNotThrow(() => assertSupabaseTargetAllowed("https://safe-test.supabase.co", "seed", environment));
+  assert.throws(() => assertSupabaseTargetAllowed("https://production.supabase.co", "seed", environment), /not on the explicit non-production allowlist/);
+  assert.throws(() => assertSupabaseTargetAllowed("https://safe-test.supabase.co", "clean", environment), /CONFIRM_SYNTHETIC_CLEAN/);
+  assert.doesNotThrow(() => assertSupabaseTargetAllowed("https://safe-test.supabase.co", "clean", { ...environment, CONFIRM_SYNTHETIC_CLEAN: "DELETE SYNTHETIC DATA" }));
 });
 
 test("local seeding is idempotent and clean removes only synthetic fixtures", async () => {

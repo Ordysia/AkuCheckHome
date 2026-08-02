@@ -2935,3 +2935,26 @@ body {
     border-radius: 15px;
   }
 }
+
+/* Reguły: nagłówek wyrównany do pełnej szerokości siatki */
+.rules-hero {
+  width: 100%;
+  max-width: none;
+  padding: clamp(22px, 2.6vw, 30px);
+  margin: 0 0 16px;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.rules-hero h2 { font-size: clamp(30px, 4vw, 48px); }
+.rules-hero > p:last-child {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: #c3d3cd;
+}
+
+@media (max-width: 700px) {
+  .rules-hero {
+    padding: 20px 18px;
+    border-radius: 15px;
+  }
+}

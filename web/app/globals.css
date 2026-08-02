@@ -215,14 +215,6 @@ button {
 }
 
 .nav-entry { display: grid; }
-.nav-group-label {
-  margin: 9px 13px 5px;
-  color: #789a8e;
-  font-size: 7px;
-  font-weight: 800;
-  letter-spacing: .16em;
-}
-
 .nav-item {
   border: 0;
   background: transparent;
@@ -258,6 +250,19 @@ button {
   color: white;
   background: #315b4f;
   box-shadow: inset 2px 0 0 var(--gold);
+}
+
+.nav-item.completed:not(.active) {
+  color: #f2f0df;
+  background: #4f6241;
+  box-shadow: inset 2px 0 0 #a9a270;
+}
+
+.nav-item.completed:not(.active) .nav-icon::after {
+  content: "✓";
+  margin-left: -4px;
+  color: #e6dfbd;
+  font-size: 8px;
 }
 
 .nav-icon {
@@ -1234,6 +1239,14 @@ button {
   gap: 20px;
 }
 
+.chart-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
 .bar-day {
   height: 100%;
   display: grid;
@@ -1278,6 +1291,14 @@ button {
   color: var(--green);
   font-size: 22px;
 }
+
+.progress-compare { margin-top: 34px; }
+.compare-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+.compare-card { min-height: 190px; padding: 23px; }
+.compare-card > span { color: #9ca79f; font-family: var(--font-serif), serif; font-size: 24px; }
+.compare-card h3 { margin: 17px 0 8px; font-family: var(--font-serif), serif; font-size: 24px; font-weight: 500; }
+.compare-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.compare-card p strong { color: var(--green-dark); }
 
 .mini-insight p {
   color: var(--muted);
@@ -1373,7 +1394,12 @@ button {
     font-weight: 800;
   }
 
-  .nav-group-label { display: none; }
+  .mobile-nav button.completed:not(.active) {
+    color: #596847;
+    background: rgba(91, 105, 70, .11);
+    font-weight: 800;
+  }
+
   .wellbeing-card { padding: 25px 20px; }
   .wellbeing-heading h2 { font-size: 39px; }
   .wellbeing-symbol { display: none; }
@@ -1381,6 +1407,15 @@ button {
   .wellbeing-field textarea { min-height: 240px; padding: 16px; }
   .wellbeing-actions { align-items: stretch; flex-direction: column-reverse; }
   .wellbeing-actions .primary { width: 100%; }
+}
+
+@media (max-width: 900px) {
+  .compare-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .compare-grid { grid-template-columns: 1fr; }
+  .compare-card { min-height: auto; }
 }
 
 @media (max-width: 620px) {

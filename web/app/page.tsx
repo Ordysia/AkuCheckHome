@@ -80,9 +80,9 @@ const pulseHands = [
   },
 ] as const;
 
-const navItems: { id: View; label: string; icon: string; groupLabel?: string }[] = [
+const navItems: { id: View; label: string; icon: string }[] = [
   { id: "home", label: "Dzisiaj", icon: "⌂" },
-  { id: "wellbeing", label: "Samopoczucie", icon: "○", groupLabel: "SAMOBADANIE" },
+  { id: "wellbeing", label: "Samopoczucie", icon: "○" },
   { id: "checkin", label: "Check-in", icon: "✓" },
   { id: "pulse", label: "12 pulsów", icon: "∿" },
   { id: "support", label: "Pomóż sobie", icon: "✦" },
@@ -127,12 +127,14 @@ function AkuCheckApp({
   const [completedActions, setCompletedActions] = useState<string[]>([]);
   const [wellbeing, setWellbeing] = useState("");
   const [wellbeingSaved, setWellbeingSaved] = useState(false);
+  const [history, setHistory] = useState<LocalHealthStore>({ checkins: {}, pulses: {}, wellbeing: {} });
 
   useEffect(() => {
     const store = readLocalStore();
     const checkin = store.checkins[today];
     const pulse = store.pulses[today];
     const wellbeingEntry = store.wellbeing?.[today];
+    setHistory(store);
 
     if (checkin) {
       setScores({ ...defaultScores, ...checkin.scores });
@@ -165,8 +167,9 @@ function AkuCheckApp({
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    setHistory({ ...store });
     setSaved(true);
-    setView("home");
+    setView("pulse");
   };
 
   const savePulses = () => {
@@ -176,7 +179,9 @@ function AkuCheckApp({
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    setHistory({ ...store });
     setPulseSaved(true);
+    setView("support");
   };
 
   const saveWellbeing = () => {
@@ -187,7 +192,9 @@ function AkuCheckApp({
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    setHistory({ ...store });
     setWellbeingSaved(true);
+    setView("checkin");
   };
 
   const sleepDuration = useMemo(() => {
@@ -214,6 +221,11 @@ function AkuCheckApp({
     );
   };
 
+  const isViewCompleted = (itemView: View) =>
+    (itemView === "wellbeing" && wellbeingSaved) ||
+    (itemView === "checkin" && saved) ||
+    (itemView === "pulse" && pulseSaved);
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -228,9 +240,8 @@ function AkuCheckApp({
         <nav aria-label="Główna nawigacja">
           {navItems.map((item) => (
             <div className="nav-entry" key={item.id}>
-              {item.groupLabel && <span className="nav-group-label">{item.groupLabel}</span>}
               <button
-                className={view === item.id ? "nav-item active" : "nav-item"}
+                className={`nav-item${view === item.id ? " active" : ""}${isViewCompleted(item.id) ? " completed" : ""}`}
                 onClick={() => setView(item.id)}
               >
                 <span className="nav-icon" aria-hidden="true">{item.icon}</span>
@@ -276,6 +287,8 @@ function AkuCheckApp({
           {view === "home" && (
             <HomeView
               saved={saved}
+              wellbeingSaved={wellbeingSaved}
+              pulseSaved={pulseSaved}
               scores={scores}
               setView={setView}
               completedActions={completedActions}
@@ -330,9 +343,11 @@ function AkuCheckApp({
               checkinSaved={saved}
               pulseValues={pulseValues}
               pulseSaved={pulseSaved}
+              wellbeing={wellbeing}
+              wellbeingSaved={wellbeingSaved}
             />
           )}
-          {view === "progress" && <ProgressView />}
+          {view === "progress" && <ProgressView history={history} />}
           {view === "rules" && <RulesView />}
         </div>
 
@@ -346,7 +361,7 @@ function AkuCheckApp({
         {navItems.map((item) => (
           <button
             key={item.id}
-            className={view === item.id ? "active" : ""}
+            className={`${view === item.id ? "active" : ""}${isViewCompleted(item.id) ? " completed" : ""}`}
             onClick={() => setView(item.id)}
           >
             <span>{item.icon}</span>
@@ -407,12 +422,16 @@ function WellbeingView({
 
 function HomeView({
   saved,
+  wellbeingSaved,
+  pulseSaved,
   scores,
   setView,
   completedActions,
   toggleAction,
 }: {
   saved: boolean;
+  wellbeingSaved: boolean;
+  pulseSaved: boolean;
   scores: Scores;
   setView: (view: View) => void;
   completedActions: string[];
@@ -423,15 +442,19 @@ function HomeView({
       <section className="welcome">
         <div>
           <p className="eyebrow green">CODZIENNA CHWILA DLA SIEBIE</p>
-          <h2>{saved ? "Check-in zapisany. Dziękujemy." : "Jak się dziś masz?"}</h2>
+          <h2>Jak się dziś masz?</h2>
           <p>
-            {saved
-              ? "Możesz przejrzeć swoje wyniki albo wykonać opcjonalne badanie pulsów."
-              : "Krótki check-in zajmie około 2 minut i pomoże Ci zauważać zmiany w czasie."}
+            {!wellbeingSaved
+              ? "Zacznij od zapisania własnymi słowami, jak się dziś czujesz."
+              : !saved
+                ? "Samopoczucie zapisane. Teraz uzupełnij krótki check-in."
+                : !pulseSaved
+                  ? "Check-in zapisany. Zostało badanie 12 pulsów."
+                  : "Dzisiejsza ścieżka jest kompletna. Zobacz przygotowane propozycje wsparcia."}
           </p>
         </div>
-        <button className="primary" onClick={() => setView("checkin")}>
-          {saved ? "Edytuj dzisiejszy check-in" : "Rozpocznij check-in"}
+        <button className="primary" onClick={() => setView(!wellbeingSaved ? "wellbeing" : !saved ? "checkin" : !pulseSaved ? "pulse" : "support")}>
+          {!wellbeingSaved ? "Rozpocznij check-in" : !saved ? "Przejdź do check-in" : !pulseSaved ? "Przejdź do 12 pulsów" : "Zobacz propozycje"}
           <span>→</span>
         </button>
       </section>
@@ -946,6 +969,8 @@ function SupportView({
   checkinSaved,
   pulseValues,
   pulseSaved,
+  wellbeing,
+  wellbeingSaved,
 }: {
   completedActions: string[];
   toggleAction: (id: string) => void;
@@ -957,6 +982,8 @@ function SupportView({
   checkinSaved: boolean;
   pulseValues: Record<string, number>;
   pulseSaved: boolean;
+  wellbeing: string;
+  wellbeingSaved: boolean;
 }) {
   const recommendations: Array<{
     id: string;
@@ -980,6 +1007,13 @@ function SupportView({
   const entryExitBlocks = pulseSaved
     ? analyzeEntryExitBlocks(pulseValues)
     : [];
+
+  const wellbeingLower = wellbeing.toLocaleLowerCase("pl");
+  const contextualPoint = wellbeingSaved
+    ? getContextualPointRecommendation(wellbeingLower, scores, checkinSaved)
+    : null;
+
+  if (contextualPoint) recommendations.push(contextualPoint);
 
   if (
     checkinSaved &&
@@ -1024,23 +1058,6 @@ function SupportView({
       )} godz. ${sleepMinutes % 60} min.`,
       description:
         "Odłóż ekran, oprzyj ciało i pozwól oczom odpocząć. Jeśli możesz, zaplanuj dziś spokojniejsze tempo i regularną porę snu.",
-    });
-  }
-
-  if (
-    checkinSaved &&
-    (symptoms.includes("Ból głowy") ||
-      otherSymptom.toLocaleLowerCase("pl").includes("ból głowy"))
-  ) {
-    recommendations.push({
-      id: "li4",
-      title: "LI4 · Hegu",
-      tag: "Akupresura · 30 s na dłoń",
-      reason: "Dlaczego: w check-inie zaznaczono ból głowy.",
-      description:
-        "Na grzbiecie dłoni znajdź miękkie miejsce między kciukiem a palcem wskazującym. Uciskaj komfortowo opuszkiem kciuka, małymi ruchami okrężnymi.",
-      warning:
-        "Nie stosuj w ciąży. Nie uciskaj rany, wysypki, obrzęku ani bolesnego miejsca. Nacisk nie może boleć.",
     });
   }
 
@@ -1102,11 +1119,14 @@ function SupportView({
         <p className="eyebrow green">DZISIEJSZA ANALIZA</p>
         <h2>Co możesz zrobić dla siebie teraz</h2>
         <p>
-          Jawne reguły uwzględniają dzisiejszy check-in
+          Jawne reguły uwzględniają opis samopoczucia, dzisiejszy check-in
           {pulseSaved ? " i zapis 12 pulsów" : ""}. To wsparcie edukacyjne,
           nie diagnoza ani plan leczenia.
         </p>
         <div className="analysis-status">
+          <span className={wellbeingSaved ? "ready" : ""}>
+            {wellbeingSaved ? "✓" : "○"} Samopoczucie
+          </span>
           <span className={checkinSaved ? "ready" : ""}>
             {checkinSaved ? "✓" : "○"} Check-in
           </span>
@@ -1128,6 +1148,50 @@ function SupportView({
       </div>
     </>
   );
+}
+
+function getContextualPointRecommendation(
+  wellbeing: string,
+  scores: Scores,
+  checkinSaved: boolean,
+) {
+  const commonWarning =
+    "To pojedyncza propozycja edukacyjna na podstawie zapisanych obserwacji, nie diagnoza. Stosuj wyłącznie łagodny, bezbolesny ucisk i przerwij przy pogorszeniu samopoczucia.";
+
+  if (/granice|odpuści|strat|żal|poczucie wartości/.test(wellbeing)) {
+    return {
+      id: "point-li4-context",
+      title: "LI4 · Hegu · Łącząca Dolina",
+      tag: "Pojedyncza propozycja punktu · baza meridianów",
+      reason: "Dlaczego: w opisie samopoczucia pojawia się temat granic, odpuszczania lub przechodzenia przez stratę.",
+      description: "Według bazy Pięciu Elementów LI4 może być rozważany jako wsparcie jasności, granic, poczucia wartości oraz zdolności zakończenia i odpuszczenia.",
+      warning: commonWarning,
+    };
+  }
+
+  if (/frustrac|złoś|kierunek|decyz|utkn/.test(wellbeing) || (checkinSaved && scores.tension >= 4)) {
+    return {
+      id: "point-lr3-context",
+      title: "LR3 · Taichong · Wielki Napór",
+      tag: "Pojedyncza propozycja punktu · baza meridianów",
+      reason: `Dlaczego: ${scores.tension >= 4 ? `napięcie ${scores.tension}/5` : "opis wskazuje temat kierunku, decyzji lub impulsu działania"}.`,
+      description: "Według bazy Pięciu Elementów LR3 może być rozważany jako wsparcie wizji, elastyczności, planowania, decyzji i konstruktywnego kierowania impulsem działania.",
+      warning: commonWarning,
+    };
+  }
+
+  if (/smut|samot|relac|radoś|bliskoś/.test(wellbeing) || (checkinSaved && scores.mood <= 2)) {
+    return {
+      id: "point-ht7-context",
+      title: "HT7 · Shenmen · Brama Ducha",
+      tag: "Pojedyncza propozycja punktu · baza meridianów",
+      reason: `Dlaczego: ${scores.mood <= 2 ? `nastrój ${scores.mood}/5` : "w opisie pojawia się temat radości, bliskości lub relacji"}.`,
+      description: "Według bazy Pięciu Elementów HT7 może być rozważany jako wsparcie radości, świadomości, komunikacji, obecności i bezpiecznych relacji.",
+      warning: commonWarning,
+    };
+  }
+
+  return null;
 }
 
 function SupportDetail({
@@ -1177,29 +1241,43 @@ function SupportDetail({
   );
 }
 
-function ProgressView() {
-  const days = [
-    ["Śr", 3, 2],
-    ["Czw", 4, 3],
-    ["Pt", 3, 4],
-    ["Sob", 4, 2],
-    ["Nd", 2, 4],
-    ["Pon", 3, 3],
-    ["Dziś", 4, 2],
-  ];
+function ProgressView({ history }: { history: LocalHealthStore }) {
+  const checkinEntries = Object.entries(history.checkins).sort(([a], [b]) => a.localeCompare(b));
+  const recentEntries = checkinEntries.slice(-7);
+  const wellbeingCount = Object.keys(history.wellbeing ?? {}).length;
+  const pulseCount = Object.keys(history.pulses).length;
+  const average = (key: keyof Scores) =>
+    checkinEntries.length
+      ? checkinEntries.reduce((sum, [, entry]) => sum + entry.scores[key], 0) / checkinEntries.length
+      : 0;
+  const symptomCounts = new Map<string, number>();
+  checkinEntries.forEach(([, entry]) => entry.symptoms.forEach((symptom) => symptomCounts.set(symptom, (symptomCounts.get(symptom) ?? 0) + 1)));
+  const commonSymptom = [...symptomCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Jeszcze brak danych";
+  const firstHalf = checkinEntries.slice(0, Math.min(3, checkinEntries.length));
+  const lastHalf = checkinEntries.slice(-Math.min(3, checkinEntries.length));
+  const segmentAverage = (entries: typeof checkinEntries, key: keyof Scores) =>
+    entries.length ? entries.reduce((sum, [, entry]) => sum + entry.scores[key], 0) / entries.length : 0;
+  const energyChange = segmentAverage(lastHalf, "energy") - segmentAverage(firstHalf, "energy");
+  const trendLabel = checkinEntries.length < 2
+    ? "Potrzeba więcej wpisów"
+    : energyChange >= 0.5
+      ? "Energia rośnie"
+      : energyChange <= -0.5
+        ? "Energia spada"
+        : "Energia jest stabilna";
   return (
     <>
       <section className="progress-summary">
         <div>
-          <p className="eyebrow green">OSTATNIE 7 DNI</p>
+          <p className="eyebrow green">TWOJA HISTORIA</p>
           <h2>Twoje tempo, nie wyścig</h2>
           <p>
             Trendy pomagają zauważyć zmianę. Nie służą do oceny ani diagnozy.
           </p>
         </div>
         <div className="streak">
-          <strong>6</strong>
-          <span>check-inów<br />w tym tygodniu</span>
+          <strong>{checkinEntries.length}</strong>
+          <span>zapisanych<br />check-inów</span>
         </div>
       </section>
       <section className="card chart-card">
@@ -1214,19 +1292,20 @@ function ProgressView() {
           </div>
         </div>
         <div className="bar-chart">
-          {days.map(([day, energy, stress]) => (
-            <div className="bar-day" key={day}>
+          {recentEntries.length === 0 && <p className="chart-empty">Zapisz pierwszy check-in, aby rozpocząć wykres.</p>}
+          {recentEntries.map(([date, entry]) => (
+            <div className="bar-day" key={date}>
               <div className="bars">
                 <span
                   className="bar energy"
-                  style={{ height: `${Number(energy) * 16}%` }}
+                  style={{ height: `${entry.scores.energy * 16}%` }}
                 />
                 <span
                   className="bar stress"
-                  style={{ height: `${Number(stress) * 16}%` }}
+                  style={{ height: `${entry.scores.stress * 16}%` }}
                 />
               </div>
-              <small>{day}</small>
+              <small>{new Intl.DateTimeFormat("pl-PL", { weekday: "short" }).format(new Date(`${date}T12:00:00`))}</small>
             </div>
           ))}
         </div>
@@ -1235,19 +1314,35 @@ function ProgressView() {
         <section className="card mini-insight">
           <span>☾</span>
           <p>Średnia jakość snu</p>
-          <strong>3,4 <small>/ 5</small></strong>
+          <strong>{average("sleep").toFixed(1).replace(".", ",")} <small>/ 5</small></strong>
         </section>
         <section className="card mini-insight">
           <span>◇</span>
           <p>Najczęściej zaznaczasz</p>
-          <strong>Napięcie karku</strong>
+          <strong>{commonSymptom}</strong>
         </section>
         <section className="card mini-insight">
           <span>↗</span>
           <p>Łagodny trend</p>
-          <strong>Więcej energii</strong>
+          <strong>{trendLabel}</strong>
         </section>
       </div>
+      <section className="progress-compare">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">CO WARTO PORÓWNYWAĆ</p>
+            <h2>Zmiana jest ważniejsza niż pojedynczy wynik</h2>
+          </div>
+        </div>
+        <div className="compare-grid">
+          <article className="card compare-card"><span>01</span><h3>Sen → energia</h3><p>Porównuj jakość snu i wyspanie z energią następnego dnia. Średnia energia: <strong>{average("energy").toFixed(1).replace(".", ",")}/5</strong>.</p></article>
+          <article className="card compare-card"><span>02</span><h3>Stres ↔ napięcie</h3><p>Obserwuj, czy oba wyniki rosną razem i czy odpoczynek pomaga je obniżyć. Średni stres: <strong>{average("stress").toFixed(1).replace(".", ",")}/5</strong>.</p></article>
+          <article className="card compare-card"><span>03</span><h3>Objawy w czasie</h3><p>Sprawdzaj częstotliwość, nie pojedynczy dzień. Najczęstszy zapis: <strong>{commonSymptom}</strong>.</p></article>
+          <article className="card compare-card"><span>04</span><h3>Wzorce 12 pulsów</h3><p>Porównuj, czy te same bloki powtarzają się i czy różnica maleje po wsparciu. Zapisane badania: <strong>{pulseCount}</strong>.</p></article>
+          <article className="card compare-card"><span>05</span><h3>Opis samopoczucia</h3><p>Zestawiaj własne słowa z wynikami skal. Zapisane opisy: <strong>{wellbeingCount}</strong>.</p></article>
+          <article className="card compare-card"><span>06</span><h3>Kierunek, nie ocena</h3><p>Za poprawę uznaj łagodny trend: więcej energii i snu, mniej stresu i napięcia. Nagłe pogorszenie skonsultuj ze specjalistą.</p></article>
+        </div>
+      </section>
     </>
   );
 }

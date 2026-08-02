@@ -1446,6 +1446,21 @@ function RulesView() {
           </p>
           <div className="rule-formula">HE→HT · KID→KI · LIV→LV</div>
         </article>
+
+        <article className="rule-card featured meridian-source-card">
+          <div className="rule-card-heading">
+            <span>07</span>
+            <small>V1 · 08.2026</small>
+          </div>
+          <h3>Baza 14 meridianów</h3>
+          <p>
+            Aplikacja ma załadowany zestaw reguł i opisów dla 12 meridianów
+            głównych oraz Ren Mai i Du Mai. Baza obejmuje 361 klasycznych
+            punktów i jest obowiązującym źródłem ich właściwości.
+          </p>
+          <div className="rule-formula">14 meridianów · 361 punktów · wersja v1</div>
+          <small className="rule-location">Obowiązuje od: 08.2026 · Działa w: Pomóż sobie</small>
+        </article>
       </div>
     </>
   );

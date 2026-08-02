@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { LocalHealthStore, Scores } from "@/lib/health-data/model";
+import { AuthGate } from "./auth-gate";
 import { getBreathingProtocol } from "./data/breathing-protocols";
 import { analyzeEntryExitBlocks } from "./data/pulse-entry-exit-rules";
 import {
@@ -89,6 +90,22 @@ const navItems: { id: View; label: string; icon: string }[] = [
 ];
 
 export default function Home() {
+  return (
+    <AuthGate>
+      {(user, signOut) => (
+        <AkuCheckApp userEmail={user.email ?? "Użytkownik"} signOut={signOut} />
+      )}
+    </AuthGate>
+  );
+}
+
+function AkuCheckApp({
+  userEmail,
+  signOut,
+}: {
+  userEmail: string;
+  signOut: () => Promise<void>;
+}) {
   const today = localDateKey();
   const formattedDate = new Intl.DateTimeFormat("pl-PL", {
     weekday: "long",
@@ -208,10 +225,10 @@ export default function Home() {
           <button className="language" aria-label="Zmień język">
             PL
           </button>
-          <span className="avatar">AM</span>
+          <span className="avatar">{userEmail.slice(0, 2).toUpperCase()}</span>
           <span className="profile-copy">
-            <strong>Anna</strong>
-            <small>Pierwszy użytkownik</small>
+            <strong>{userEmail.split("@")[0]}</strong>
+            <button className="sign-out" onClick={() => void signOut()}>Wyloguj</button>
           </span>
         </div>
 
@@ -227,10 +244,10 @@ export default function Home() {
             <button className="language" aria-label="Zmień język">
               PL
             </button>
-            <span className="avatar">AM</span>
+            <span className="avatar">{userEmail.slice(0, 2).toUpperCase()}</span>
             <span className="profile-copy">
-              <strong>Anna</strong>
-              <small>Pierwszy użytkownik</small>
+              <strong>{userEmail.split("@")[0]}</strong>
+              <button className="sign-out" onClick={() => void signOut()}>Wyloguj</button>
             </span>
           </div>
         </header>

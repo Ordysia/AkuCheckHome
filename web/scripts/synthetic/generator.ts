@@ -245,13 +245,12 @@ export function generateSyntheticDataset(
 
   faker.seed(seed);
   const users: SyntheticUser[] = Array.from({ length: userCount }, (_, index) => {
-    const firstName = faker.person.firstName();
-    const lastName = faker.person.lastName();
+    const syntheticNumber = String(index + 1).padStart(2, "0");
     const id = deterministicUuid(`${seed}:user:${index}`);
     return {
       id,
-      email: `synthetic.${index + 1}.${faker.helpers.slugify(`${firstName}.${lastName}`).toLowerCase()}@example.test`,
-      displayName: `${firstName} ${lastName}`,
+      email: `synthetic.user.${syntheticNumber}@example.test`,
+      displayName: `Synthetic User ${syntheticNumber}`,
       baselineScores: {
         sleep: 2 + ((index + 1) % 4),
         rested: 2 + ((index + 2) % 4),

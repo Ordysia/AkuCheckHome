@@ -66,7 +66,11 @@ test("dates are ordered and child records use their day date", () => {
 test("every persisted object is explicitly synthetic", () => {
   const dataset = generateSyntheticDataset();
   assert.equal(dataset.isSynthetic, true);
-  for (const user of dataset.users) assert.equal(user.isSynthetic, true);
+  for (const user of dataset.users) {
+    assert.equal(user.isSynthetic, true);
+    assert.match(user.displayName, /^Synthetic User \d{2}$/);
+    assert.match(user.email, /^synthetic\.user\.\d{2}@example\.test$/);
+  }
   for (const day of dataset.days) {
     assert.equal(day.isSynthetic, true);
     if (day.checkin) assert.equal(day.checkin.isSynthetic, true);

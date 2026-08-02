@@ -289,10 +289,7 @@ function AkuCheckApp({
               saved={saved}
               wellbeingSaved={wellbeingSaved}
               pulseSaved={pulseSaved}
-              scores={scores}
               setView={setView}
-              completedActions={completedActions}
-              toggleAction={toggleAction}
             />
           )}
           {view === "wellbeing" && (
@@ -424,18 +421,12 @@ function HomeView({
   saved,
   wellbeingSaved,
   pulseSaved,
-  scores,
   setView,
-  completedActions,
-  toggleAction,
 }: {
   saved: boolean;
   wellbeingSaved: boolean;
   pulseSaved: boolean;
-  scores: Scores;
   setView: (view: View) => void;
-  completedActions: string[];
-  toggleAction: (id: string) => void;
 }) {
   return (
     <>
@@ -459,29 +450,7 @@ function HomeView({
         </button>
       </section>
 
-      <div className="dashboard-grid">
-        <section className="card daily-card">
-          <div className="card-heading">
-            <div>
-              <p className="eyebrow">DZISIEJSZY OBRAZ</p>
-              <h3>{saved ? "Twoje samopoczucie" : "Jeszcze bez wpisu"}</h3>
-            </div>
-            <button className="text-button" onClick={() => setView("progress")}>
-              Zobacz historię
-            </button>
-          </div>
-          <div className="score-row">
-            {(Object.keys(scores) as (keyof Scores)[]).map((key) => (
-              <div className="score" key={key}>
-                <span className={`score-ring score-${scores[key]}`}>
-                  {saved ? scores[key] : "–"}
-                </span>
-                <small>{scoreLabels[key]}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
+      <div className="dashboard-grid observation-only">
         <section className="card observation">
           <div className="leaf-mark">⌁</div>
           <p className="eyebrow green">ŁAGODNA OBSERWACJA</p>
@@ -492,47 +461,6 @@ function HomeView({
           </p>
         </section>
       </div>
-
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">NA DZIŚ</p>
-            <h2>Małe działania, które możesz wykonać</h2>
-          </div>
-          <button className="text-button" onClick={() => setView("support")}>
-            Wszystkie propozycje →
-          </button>
-        </div>
-        <div className="action-grid">
-          <ActionCard
-            id="breath"
-            label="Oddech"
-            title="Spokojny wydech"
-            description="2 minuty · bez sprzętu"
-            color="sage"
-            completed={completedActions.includes("breath")}
-            toggle={toggleAction}
-          />
-          <ActionCard
-            id="li4"
-            label="Akupresura"
-            title="LI4 · Hegu"
-            description="30 sekund na każdą dłoń"
-            color="clay"
-            completed={completedActions.includes("li4")}
-            toggle={toggleAction}
-          />
-          <ActionCard
-            id="rest"
-            label="Regeneracja"
-            title="Cicha przerwa"
-            description="5 minut bez ekranu"
-            color="sand"
-            completed={completedActions.includes("rest")}
-            toggle={toggleAction}
-          />
-        </div>
-      </section>
     </>
   );
 }

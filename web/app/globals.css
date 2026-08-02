@@ -470,6 +470,10 @@ button {
   gap: 22px;
 }
 
+.dashboard-grid.observation-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .card {
   background: rgba(252, 248, 239, 0.92);
   border: 1px solid var(--line);

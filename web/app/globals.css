@@ -2913,3 +2913,15 @@ body {
 .content:has(> .welcome) .welcome h2 { color: #123d34; }
 .content:has(> .welcome) .welcome p:not(.eyebrow) { color: #526c63; }
 .content:has(> .welcome) .welcome .eyebrow.green { color: #315f50; }
+
+/* Pomóż sobie: nagłówek wyrównany do pełnej szerokości kart */
+.support-hero {
+  width: 100%;
+  max-width: none;
+  padding: clamp(24px, 3.5vw, 40px);
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .support-hero { padding: 22px 18px; }
+}

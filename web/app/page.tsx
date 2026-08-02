@@ -705,6 +705,7 @@ function PulseView({
   saved: boolean;
   save: () => void;
 }) {
+  const [showPulseVideo, setShowPulseVideo] = useState(false);
   const liveBlocks = analyzeEntryExitBlocks(pulseValues);
   const normalizedCode = (code: string) =>
     code === "HE" ? "HT" : code === "KID" ? "KI" : code === "LIV" ? "LV" : code;
@@ -738,6 +739,42 @@ function PulseView({
           <span>0 domyślny</span>
           <span>+2 bardzo wyraźny</span>
         </div>
+      </section>
+
+      <section className={`pulse-video-card ${showPulseVideo ? "open" : ""}`}>
+        <div className="pulse-video-copy">
+          <span className="pulse-video-icon" aria-hidden="true">▶</span>
+          <div>
+            <p className="eyebrow green">FILM INSTRUKTAŻOWY</p>
+            <h3>Jak zbadać pulsy powierzchowne i głębokie?</h3>
+            <p>
+              Obejrzyj instrukcję przed rozpoczęciem i wykonaj badanie we
+              własnym tempie. Następnie wpisz 12 odczytów poniżej.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="pulse-video-button"
+          aria-expanded={showPulseVideo}
+          aria-controls="pulse-instruction-video"
+          onClick={() => setShowPulseVideo((visible) => !visible)}
+        >
+          {showPulseVideo ? "Ukryj film" : "Obejrzyj"}
+          <span aria-hidden="true">{showPulseVideo ? "↑" : "→"}</span>
+        </button>
+        {showPulseVideo && (
+          <div className="pulse-video-player" id="pulse-instruction-video">
+            <video controls preload="metadata" playsInline>
+              <source src="/media/badanie-12-pulsow-v6.mp4" type="video/mp4" />
+              Twoja przeglądarka nie obsługuje odtwarzania filmu MP4.
+            </video>
+            <p>
+              Materiał edukacyjny do samobadania. Przerwij badanie, jeśli
+              powoduje ból lub pogorszenie samopoczucia.
+            </p>
+          </div>
+        )}
       </section>
 
       {liveBlocks.length > 0 && (

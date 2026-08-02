@@ -38,3 +38,14 @@ Treść plików źródłowych jest przechowywana bez redakcyjnych modyfikacji.
 
 Materiały mają charakter edukacyjny. Nie są instrukcją kliniczną ani zamiennikiem
 konsultacji z wykwalifikowanym specjalistą.
+
+## Materiały instruktażowe
+
+Katalog `instructional-videos/` zawiera zatwierdzone materiały pokazujące sposób
+wykonania samoobserwacji używanej w aplikacji. Film
+`Jak_zbadac_pulsy_powierzchowne_i_glebokie_v6.mp4` przedstawia sposób badania
+12 pulsów powierzchownych i głębokich. Materiał obowiązuje w wersji `v6` od
+`2026-08-02`.
+
+Film ma charakter edukacyjny i nie zastępuje instruktażu ani konsultacji z
+wykwalifikowanym specjalistą.

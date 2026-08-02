@@ -15,6 +15,109 @@
   --gold: #b49a68;
 }
 
+/* Spójna paleta aplikacji inspirowana ekranem logowania */
+.main-area {
+  background:
+    radial-gradient(circle at 88% 4%, rgba(115, 151, 135, .18), transparent 22rem),
+    radial-gradient(circle at 8% 92%, rgba(194, 178, 130, .12), transparent 24rem),
+    #f4f1e8;
+}
+
+.topbar {
+  border-bottom-color: rgba(21, 63, 53, .14);
+  background: rgba(252, 249, 241, .9);
+  box-shadow: 0 8px 28px rgba(20, 63, 53, .035);
+}
+
+.welcome,
+.pulse-intro,
+.support-hero,
+.progress-summary,
+.rules-hero {
+  color: #f8f4e8;
+  border-color: rgba(208, 189, 142, .25);
+  background:
+    radial-gradient(circle at 88% 15%, rgba(194, 178, 130, .2), transparent 12rem),
+    radial-gradient(circle at 10% 110%, rgba(115, 151, 135, .25), transparent 17rem),
+    linear-gradient(145deg, #143f35 0%, #1c5144 58%, #153c34 100%);
+  box-shadow: 0 20px 48px rgba(20, 63, 53, .14);
+}
+
+.welcome p:not(.eyebrow),
+.pulse-intro p:not(.eyebrow),
+.support-hero p:not(.eyebrow),
+.progress-summary p:not(.eyebrow),
+.rules-hero > p:last-child {
+  color: #c3d3cd;
+}
+
+.welcome .eyebrow.green,
+.pulse-intro .eyebrow.green,
+.support-hero .eyebrow.green,
+.progress-summary .eyebrow.green,
+.rules-hero .eyebrow.green {
+  color: #d0bd8e;
+}
+
+.welcome .primary,
+.pulse-intro .primary,
+.support-hero .primary,
+.progress-summary .primary {
+  color: #153f35;
+  background: #eee4cd;
+  box-shadow: 0 10px 24px rgba(5, 28, 23, .2);
+}
+
+.welcome .primary:hover,
+.pulse-intro .primary:hover,
+.support-hero .primary:hover,
+.progress-summary .primary:hover {
+  background: #f7edda;
+}
+
+.card,
+.form-card,
+.support-detail,
+.pulse-hand,
+.rules-card {
+  border-color: rgba(49, 95, 80, .14);
+  background: rgba(255, 253, 247, .84);
+  box-shadow: 0 14px 36px rgba(33, 62, 52, .065);
+}
+
+.observation {
+  color: #f7f2e6;
+  border-color: rgba(208, 189, 142, .24);
+  background:
+    radial-gradient(circle at 92% 10%, rgba(194, 178, 130, .18), transparent 10rem),
+    linear-gradient(145deg, #173f35, #28584a);
+  box-shadow: 0 18px 42px rgba(20, 63, 53, .13);
+}
+
+.observation .eyebrow.green { color: #d0bd8e; }
+.observation > p:last-child { color: #c3d3cd; }
+
+.wellbeing-symbol,
+.step-badge,
+.support-number {
+  border-color: rgba(180, 154, 104, .58);
+  color: #9b814d;
+  background: rgba(238, 228, 205, .55);
+}
+
+.wellbeing-field textarea,
+.other-field input {
+  border-color: rgba(49, 95, 80, .18);
+  background: rgba(255, 253, 247, .92);
+}
+
+.primary {
+  background: #17483c;
+  box-shadow: 0 8px 20px rgba(23, 72, 60, .2);
+}
+
+.primary:hover { background: #21584a; }
+
 * {
   box-sizing: border-box;
 }
@@ -1503,6 +1606,82 @@ button {
     width: calc(100% - 28px);
   }
 }
+
+/* Końcowe nadpisania palety — wspólne dla wszystkich zakładek */
+.main-area {
+  background: radial-gradient(circle at 88% 4%, rgba(115,151,135,.18), transparent 22rem), radial-gradient(circle at 8% 92%, rgba(194,178,130,.12), transparent 24rem), #f4f1e8;
+}
+.topbar {
+  border-bottom-color: rgba(21,63,53,.14);
+  background: rgba(252,249,241,.9);
+  box-shadow: 0 8px 28px rgba(20,63,53,.035);
+}
+.welcome,
+.pulse-intro,
+.support-hero,
+.progress-summary,
+.rules-hero {
+  color: #f8f4e8;
+  border-color: rgba(208,189,142,.25);
+  background: radial-gradient(circle at 88% 15%, rgba(194,178,130,.2), transparent 12rem), radial-gradient(circle at 10% 110%, rgba(115,151,135,.25), transparent 17rem), linear-gradient(145deg, #143f35 0%, #1c5144 58%, #153c34 100%);
+  box-shadow: 0 20px 48px rgba(20,63,53,.14);
+}
+.welcome p:not(.eyebrow),
+.pulse-intro p:not(.eyebrow),
+.support-hero p:not(.eyebrow),
+.progress-summary p:not(.eyebrow),
+.rules-hero > p:last-child { color: #c3d3cd; }
+.welcome .eyebrow.green,
+.pulse-intro .eyebrow.green,
+.support-hero .eyebrow.green,
+.progress-summary .eyebrow.green,
+.rules-hero .eyebrow.green { color: #d0bd8e; }
+.welcome .primary,
+.pulse-intro .primary,
+.support-hero .primary,
+.progress-summary .primary {
+  color: #153f35;
+  background: #eee4cd;
+  box-shadow: 0 10px 24px rgba(5,28,23,.2);
+}
+.welcome .primary:hover,
+.pulse-intro .primary:hover,
+.support-hero .primary:hover,
+.progress-summary .primary:hover { background: #f7edda; }
+.card,
+.form-card,
+.support-detail,
+.pulse-hand,
+.rules-card {
+  border-color: rgba(49,95,80,.14);
+  background: rgba(255,253,247,.84);
+  box-shadow: 0 14px 36px rgba(33,62,52,.065);
+}
+.observation {
+  color: #f7f2e6;
+  border-color: rgba(208,189,142,.24);
+  background: radial-gradient(circle at 92% 10%, rgba(194,178,130,.18), transparent 10rem), linear-gradient(145deg, #173f35, #28584a);
+  box-shadow: 0 18px 42px rgba(20,63,53,.13);
+}
+.observation .eyebrow.green { color: #d0bd8e; }
+.observation > p:last-child { color: #c3d3cd; }
+.wellbeing-symbol,
+.step-badge,
+.support-number {
+  border-color: rgba(180,154,104,.58);
+  color: #9b814d;
+  background: rgba(238,228,205,.55);
+}
+.wellbeing-field textarea,
+.other-field input {
+  border-color: rgba(49,95,80,.18);
+  background: rgba(255,253,247,.92);
+}
+.primary {
+  background: #17483c;
+  box-shadow: 0 8px 20px rgba(23,72,60,.2);
+}
+.primary:hover { background: #21584a; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

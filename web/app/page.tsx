@@ -1009,11 +1009,23 @@ function SupportView({
     : [];
 
   const wellbeingLower = wellbeing.toLocaleLowerCase("pl");
-  const contextualPoint = wellbeingSaved
-    ? getContextualPointRecommendation(wellbeingLower, scores, checkinSaved)
-    : null;
+  const contextualPoints = wellbeingSaved
+    ? getContextualPointRecommendations(wellbeingLower)
+    : [];
 
-  if (contextualPoint) recommendations.push(contextualPoint);
+  recommendations.push(...contextualPoints);
+
+  if (wellbeingSaved && contextualPoints.length === 0) {
+    recommendations.push({
+      id: "wellbeing-no-point",
+      title: "Brak jednoznacznego dopasowania punktu",
+      tag: "Samopoczucie · baza 14 meridianów v1",
+      reason:
+        "Wpis nie zawiera tematu, który możemy bezpośrednio połączyć z właściwościami punktów opisanymi w bazie.",
+      description:
+        "Aplikacja nie wybiera punktu na podstawie domysłu. Możesz uzupełnić Samopoczucie własnymi słowami, opisując dominujące odczucia, potrzeby lub obszar napięcia.",
+    });
+  }
 
   if (
     checkinSaved &&
@@ -1123,6 +1135,10 @@ function SupportView({
           {pulseSaved ? " i zapis 12 pulsów" : ""}. To wsparcie edukacyjne,
           nie diagnoza ani plan leczenia.
         </p>
+        <p className="source-note">
+          Punkty akupresurowe: dopasowanie tematów z wpisu · baza 14
+          meridianów v1 · 08.2026
+        </p>
         <div className="analysis-status">
           <span className={wellbeingSaved ? "ready" : ""}>
             {wellbeingSaved ? "✓" : "○"} Samopoczucie
@@ -1150,48 +1166,86 @@ function SupportView({
   );
 }
 
-function getContextualPointRecommendation(
-  wellbeing: string,
-  scores: Scores,
-  checkinSaved: boolean,
-) {
+function getContextualPointRecommendations(wellbeing: string) {
   const commonWarning =
-    "To pojedyncza propozycja edukacyjna na podstawie zapisanych obserwacji, nie diagnoza. Stosuj wyłącznie łagodny, bezbolesny ucisk i przerwij przy pogorszeniu samopoczucia.";
+    "To edukacyjna propozycja akupresury, nie diagnoza ani plan leczenia. Stosuj wyłącznie łagodny, bezbolesny ucisk bez użycia igieł. Nie uciskaj miejsca zranionego lub bolesnego i przerwij przy pogorszeniu samopoczucia. Baza nie opisuje lokalizacji anatomicznych — położenie punktu potwierdź z wykwalifikowaną osobą.";
 
-  if (/granice|odpuści|strat|żal|poczucie wartości/.test(wellbeing)) {
-    return {
-      id: "point-li4-context",
-      title: "LI4 · Hegu · Łącząca Dolina",
-      tag: "Pojedyncza propozycja punktu · baza meridianów",
-      reason: "Dlaczego: w opisie samopoczucia pojawia się temat granic, odpuszczania lub przechodzenia przez stratę.",
-      description: "Według bazy Pięciu Elementów LI4 może być rozważany jako wsparcie jasności, granic, poczucia wartości oraz zdolności zakończenia i odpuszczenia.",
-      warning: commonWarning,
-    };
-  }
-
-  if (/frustrac|złoś|kierunek|decyz|utkn/.test(wellbeing) || (checkinSaved && scores.tension >= 4)) {
-    return {
+  const rules = [
+    {
+      id: "point-lu9-context",
+      pattern: /granic|odpuś|strat|żał|żal|poczuci.{0,8}wartoś|brak.{0,8}wartoś/,
+      title: "LU9 · Taiyuan · Wielka Otchłań",
+      theme: "granic, odpuszczania, straty lub poczucia własnej wartości",
+      description:
+        "Baza opisuje LU9 jako punkt wspierający jasność, granice, poczucie wartości oraz zdolność zakończenia i odpuszczenia; w warstwie Shen także godność i przechodzenie przez stratę bez utraty wartości siebie.",
+    },
+    {
       id: "point-lr3-context",
+      pattern: /frustr|złoś|gniew|utkn|kierun|decyz|bezrad|nadziej|now.{0,5}począt/,
       title: "LR3 · Taichong · Wielki Napór",
-      tag: "Pojedyncza propozycja punktu · baza meridianów",
-      reason: `Dlaczego: ${scores.tension >= 4 ? `napięcie ${scores.tension}/5` : "opis wskazuje temat kierunku, decyzji lub impulsu działania"}.`,
-      description: "Według bazy Pięciu Elementów LR3 może być rozważany jako wsparcie wizji, elastyczności, planowania, decyzji i konstruktywnego kierowania impulsem działania.",
-      warning: commonWarning,
-    };
-  }
-
-  if (/smut|samot|relac|radoś|bliskoś/.test(wellbeing) || (checkinSaved && scores.mood <= 2)) {
-    return {
+      theme: "frustracji, utknięcia, decyzji, kierunku lub nowego początku",
+      description:
+        "Baza opisuje LR3 jako punkt wspierający wizję, elastyczność, planowanie, decyzję i konstruktywne kierowanie impulsem działania; w warstwie Shen także kierunek, nadzieję i nowy początek.",
+    },
+    {
       id: "point-ht7-context",
-      title: "HT7 · Shenmen · Brama Ducha",
-      tag: "Pojedyncza propozycja punktu · baza meridianów",
-      reason: `Dlaczego: ${scores.mood <= 2 ? `nastrój ${scores.mood}/5` : "w opisie pojawia się temat radości, bliskości lub relacji"}.`,
-      description: "Według bazy Pięciu Elementów HT7 może być rozważany jako wsparcie radości, świadomości, komunikacji, obecności i bezpiecznych relacji.",
-      warning: commonWarning,
-    };
-  }
+      pattern: /smut|samot|radoś|bliskoś|relac|odrzuc|nieobecn|zamknię/,
+      title: "HT7 · Shenmen",
+      theme: "smutku, samotności, bliskości, relacji lub potrzeby obecności",
+      description:
+        "Baza opisuje HT7 jako punkt wspierający radość, świadomość, komunikację, obecność i bezpieczne relacje; w warstwie Shen także ciepło, bliskość i autentyczną obecność.",
+    },
+    {
+      id: "point-pc6-context",
+      pattern: /przytłocz|przeciąż|ochron|bezpiecz|adapt|komunik|otworzy|otwartoś/,
+      title: "PC6 · Neiguan",
+      theme: "przeciążenia, potrzeby ochrony, adaptacji lub komunikacji",
+      description:
+        "Baza opisuje PC6 jako punkt wspierający ochronę emocjonalną, połączenie, adaptację i harmonijną komunikację; w warstwie Shen ochronę przy zachowaniu otwartości na relację i wymianę.",
+    },
+    {
+      id: "point-ki3-context",
+      pattern: /lęk|strach|niepewn|brak.{0,8}sił|wyczerp|wytrwa|zasob/,
+      title: "KI3 · Taixi · Wielki Strumień",
+      theme: "lęku, niepewności, wyczerpania, wytrwałości lub zasobów",
+      description:
+        "Baza opisuje KI3 jako punkt wspierający spokój wobec niepewności, wolę, wytrwałość i mądre gospodarowanie zasobami; w warstwie Shen także mądrość, zaufanie i potencjał.",
+    },
+    {
+      id: "point-sp3-context",
+      pattern: /chaos|rozpros|koncentr|uziemi|wspar|opie|zamartw|myśl.{0,8}duż|natłok.{0,8}myśl/,
+      title: "SP3 · Taibai",
+      theme: "rozproszenia, potrzeby uziemienia, koncentracji, wsparcia lub opieki",
+      description:
+        "Baza opisuje SP3 jako punkt wspierający uziemienie, koncentrację, zdolność przyjmowania wsparcia i zdrową opiekę; w warstwie Shen także poczucie bycia wspieranym, przynależność i wewnętrzną obfitość.",
+    },
+    {
+      id: "point-st36-context",
+      pattern: /żołąd|brzuch|trawien|jelit|apetyt/,
+      title: "ST36 · Zusanli",
+      theme: "dolegliwości brzucha, żołądka, jelit, trawienia lub apetytu",
+      description:
+        "Baza opisuje ST36 w kontekście żołądka, jelit i brzucha, a także jako punkt wspierający uziemienie, koncentrację, przyjmowanie wsparcia i zdrową opiekę.",
+    },
+    {
+      id: "point-si3-context",
+      pattern: /kark|szyj|łopat|bark/,
+      title: "SI3 · Houxi",
+      theme: "napięcia lub dyskomfortu karku, szyi, łopatki albo barku",
+      description:
+        "Baza opisuje SI3 między innymi w kontekście karku, łopatki i barku oraz jako punkt wspierający radość, świadomość, komunikację, obecność i bezpieczne relacje.",
+    },
+  ];
 
-  return null;
+  return rules
+    .filter((rule) => rule.pattern.test(wellbeing))
+    .slice(0, 3)
+    .map(({ pattern: _pattern, theme, ...rule }) => ({
+      ...rule,
+      tag: "Akupresura · baza 14 meridianów v1",
+      reason: `Na podstawie wpisu w Samopoczuciu: pojawia się temat ${theme}.`,
+      warning: commonWarning,
+    }));
 }
 
 function SupportDetail({

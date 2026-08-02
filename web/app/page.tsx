@@ -10,7 +10,7 @@ import {
   getOrganClockGuidance,
 } from "./data/organ-clock-rules";
 
-type View = "home" | "checkin" | "pulse" | "support" | "progress" | "rules";
+type View = "home" | "wellbeing" | "checkin" | "pulse" | "support" | "progress" | "rules";
 const STORAGE_KEY = "akucheckhome.health-data.v1";
 
 function localDateKey(date = new Date()) {
@@ -80,8 +80,9 @@ const pulseHands = [
   },
 ] as const;
 
-const navItems: { id: View; label: string; icon: string }[] = [
+const navItems: { id: View; label: string; icon: string; groupLabel?: string }[] = [
   { id: "home", label: "Dzisiaj", icon: "⌂" },
+  { id: "wellbeing", label: "Samopoczucie", icon: "○", groupLabel: "SAMOBADANIE" },
   { id: "checkin", label: "Check-in", icon: "✓" },
   { id: "pulse", label: "12 pulsów", icon: "∿" },
   { id: "support", label: "Pomóż sobie", icon: "✦" },
@@ -124,11 +125,14 @@ function AkuCheckApp({
   const [pulseValues, setPulseValues] = useState<Record<string, number>>({});
   const [pulseSaved, setPulseSaved] = useState(false);
   const [completedActions, setCompletedActions] = useState<string[]>([]);
+  const [wellbeing, setWellbeing] = useState("");
+  const [wellbeingSaved, setWellbeingSaved] = useState(false);
 
   useEffect(() => {
     const store = readLocalStore();
     const checkin = store.checkins[today];
     const pulse = store.pulses[today];
+    const wellbeingEntry = store.wellbeing?.[today];
 
     if (checkin) {
       setScores({ ...defaultScores, ...checkin.scores });
@@ -142,6 +146,11 @@ function AkuCheckApp({
     if (pulse) {
       setPulseValues(pulse.values);
       setPulseSaved(true);
+    }
+
+    if (wellbeingEntry) {
+      setWellbeing(wellbeingEntry.text);
+      setWellbeingSaved(true);
     }
   }, [today]);
 
@@ -168,6 +177,17 @@ function AkuCheckApp({
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
     setPulseSaved(true);
+  };
+
+  const saveWellbeing = () => {
+    const store = readLocalStore();
+    store.wellbeing ??= {};
+    store.wellbeing[today] = {
+      text: wellbeing,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    setWellbeingSaved(true);
   };
 
   const sleepDuration = useMemo(() => {
@@ -207,16 +227,16 @@ function AkuCheckApp({
 
         <nav aria-label="Główna nawigacja">
           {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={view === item.id ? "nav-item active" : "nav-item"}
-              onClick={() => setView(item.id)}
-            >
-              <span className="nav-icon" aria-hidden="true">
-                {item.icon}
-              </span>
-              {item.label}
-            </button>
+            <div className="nav-entry" key={item.id}>
+              {item.groupLabel && <span className="nav-group-label">{item.groupLabel}</span>}
+              <button
+                className={view === item.id ? "nav-item active" : "nav-item"}
+                onClick={() => setView(item.id)}
+              >
+                <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </button>
+            </div>
           ))}
         </nav>
 
@@ -260,6 +280,17 @@ function AkuCheckApp({
               setView={setView}
               completedActions={completedActions}
               toggleAction={toggleAction}
+            />
+          )}
+          {view === "wellbeing" && (
+            <WellbeingView
+              value={wellbeing}
+              setValue={(value) => {
+                setWellbeing(value);
+                setWellbeingSaved(false);
+              }}
+              saved={wellbeingSaved}
+              save={saveWellbeing}
             />
           )}
           {view === "checkin" && (
@@ -324,6 +355,53 @@ function AkuCheckApp({
         ))}
       </nav>
     </main>
+  );
+}
+
+function WellbeingView({
+  value,
+  setValue,
+  saved,
+  save,
+}: {
+  value: string;
+  setValue: (value: string) => void;
+  saved: boolean;
+  save: () => void;
+}) {
+  return (
+    <div className="wellbeing-layout">
+      <section className="card wellbeing-card">
+        <div className="wellbeing-heading">
+          <div>
+            <p className="eyebrow green">SAMOBADANIE · SAMOPOCZUCIE</p>
+            <h2>Jak się dziś czujesz?</h2>
+            <p>Zapisz to, co teraz zauważasz — własnymi słowami i bez oceniania.</p>
+          </div>
+          <span className="wellbeing-symbol" aria-hidden="true">○</span>
+        </div>
+        <label className="wellbeing-field">
+          Twój dzisiejszy opis
+          <textarea
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            maxLength={2000}
+            rows={12}
+            placeholder="Możesz opisać swoje samopoczucie, energię, emocje albo to, co zwraca dziś Twoją uwagę…"
+          />
+        </label>
+        <div className="wellbeing-meta">
+          <small>Nie wpisuj danych innych osób</small>
+          <small aria-live="polite">{value.length} / 2000 znaków</small>
+        </div>
+        <div className="wellbeing-actions">
+          {saved && <span role="status">✓ Zapisano dzisiejszy wpis</span>}
+          <button className="primary" onClick={save} disabled={!value.trim()}>
+            Zapisz samopoczucie <span>→</span>
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -1311,6 +1389,7 @@ function ActionCard({
 function viewTitle(view: View) {
   return {
     home: "Dzień dobry, Anno",
+    wellbeing: "Samopoczucie",
     checkin: "Codzienny check-in",
     pulse: "Badanie 12 pulsów",
     support: "Pomóż sobie",

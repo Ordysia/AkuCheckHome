@@ -57,9 +57,17 @@ export const pulseMeasurementSchema = z.object({
 
 export type PulseMeasurement = z.infer<typeof pulseMeasurementSchema>;
 
+export const wellbeingEntrySchema = z.object({
+  text: z.string().max(2000),
+  savedAt: z.string().datetime(),
+});
+
+export type WellbeingEntry = z.infer<typeof wellbeingEntrySchema>;
+
 export type LocalHealthStore = {
   checkins: Record<string, DailyCheckin>;
   pulses: Record<string, PulseMeasurement>;
+  wellbeing?: Record<string, WellbeingEntry>;
 };
 
 export function isCompletePulseValues(

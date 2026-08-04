@@ -28,8 +28,7 @@ npm run seed:synthetic -- --target=supabase
 ## Supabase
 
 1. Uruchom migrację `supabase/migrations/20260802123000_synthetic_health_data.sql`.
-2. Ustaw lokalnie `SUPABASE_SECRET_KEY`, `ALLOW_SYNTHETIC_SEED=true` oraz
-   `ALLOW_SYNTHETIC_SUPABASE_URL` identyczny z testowym originem Supabase.
+2. Ustaw lokalnie `SUPABASE_SECRET_KEY` oraz `ALLOW_SYNTHETIC_SEED=true`.
 3. Uruchom generator z `--target=supabase`.
 
 Publishable key nie wystarcza do zapisu fixture'ów. Tabele mają włączone RLS i
@@ -41,10 +40,6 @@ działa wyłącznie po jawnym podaniu secret key i flagi odblokowującej.
 - Identyfikatory są wyliczane deterministycznie z seed, użytkownika, daty i fazy.
 - Zapis używa upsert, więc ponowne uruchomienie nie duplikuje danych.
 - `--clean` usuwa wyłącznie rekordy z `is_synthetic = true`.
-- Czyszczenie Supabase wymaga dodatkowo dokładnej wartości
-  `CONFIRM_SYNTHETIC_CLEAN=DELETE SYNTHETIC DATA`.
-- URL celu Supabase musi dokładnie odpowiadać jawnie dozwolonemu testowemu
-  originowi w `ALLOW_SYNTHETIC_SUPABASE_URL`.
 - CLI odmawia działania po wykryciu środowiska produkcyjnego.
 - Rekordy celowo błędne są eksportowane jako `rejectedRecords`; nie trafiają do
   SQLite ani Supabase.

@@ -3,7 +3,6 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { createClient } from "@supabase/supabase-js";
 import type { SyntheticDataset } from "./model";
-import { assertSupabaseTargetAllowed } from "./safety";
 
 function bool(value: boolean) {
   return value ? 1 : 0;
@@ -170,7 +169,7 @@ export async function openLocalSyntheticStore(databasePath: string) {
   return new LocalSyntheticStore(databasePath);
 }
 
-function supabaseClient(operation: "seed" | "clean") {
+function supabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) {
@@ -178,7 +177,11 @@ function supabaseClient(operation: "seed" | "clean") {
       "Supabase target requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.",
     );
   }
-  assertSupabaseTargetAllowed(url, operation);
+  if (process.env.ALLOW_SYNTHETIC_SEED !== "true") {
+    throw new Error(
+      "Supabase seeding is locked. Set ALLOW_SYNTHETIC_SEED=true explicitly.",
+    );
+  }
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -192,7 +195,7 @@ async function requireNoSupabaseError(
 }
 
 export async function seedSupabase(dataset: SyntheticDataset) {
-  const supabase = supabaseClient("seed");
+  const supabase = supabaseClient();
   await requireNoSupabaseError(
     await supabase.from("synthetic_users").upsert(
       dataset.users.map((user) => ({
@@ -258,7 +261,7 @@ export async function seedSupabase(dataset: SyntheticDataset) {
 }
 
 export async function cleanSupabaseSyntheticData() {
-  const supabase = supabaseClient("clean");
+  const supabase = supabaseClient();
   for (const table of [
     "interventions",
     "pulse_sessions",

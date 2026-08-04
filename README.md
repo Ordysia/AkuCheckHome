@@ -1,69 +1,59 @@
 # AkuCheckHome
 
-AkuCheckHome to responsywna aplikacja webowa wspierająca codzienną samoobserwację samopoczucia, regeneracji oraz wyników badania 12 pulsów. Łączy prosty dziennik zdrowia z edukacyjnymi regułami dotyczącymi meridianów, zegara narządów, oddechu i zależności Entry–Exit.
+AkuCheckHome to aplikacja do codziennej samoobserwacji samopoczucia i zapisywania wyników badania 12 pulsów. Prowadzi użytkownika przez uporządkowaną ścieżkę:
 
-> [!IMPORTANT]
-> AkuCheckHome ma charakter edukacyjny i wspierający. Nie diagnozuje, nie zaleca leczenia i nie zastępuje konsultacji z lekarzem ani wykwalifikowanym terapeutą.
+1. **Samopoczucie** — opis własnymi słowami.
+2. **Check-in** — sen, energia, stres, nastrój, napięcie i zauważone objawy.
+3. **12 pulsów** — zapis wartości dla 12 meridianów w skali od `-2` do `+2`.
+4. **Pomóż sobie** — edukacyjne propozycje przygotowane na podstawie zapisanych obserwacji.
+5. **Postępy** — historia i porównanie danych z kolejnych dni.
 
-## Demo
+> **Ważne:** aplikacja ma charakter edukacyjny i wspiera samoobserwację. Nie stawia diagnozy, nie zastępuje konsultacji medycznej ani leczenia.
 
-Aktualną wersję aplikacji można otworzyć pod adresem:
+## Wersja
 
-**[akucheckhome.aniasieradzan.chatgpt.site](https://akucheckhome.aniasieradzan.chatgpt.site)**
+Aktualne wydanie: **v1.2** (`1.2.0`).
 
-Do korzystania z aplikacji wymagane jest konto użytkownika. Rejestrację, logowanie, reset hasła i sesję obsługuje Supabase Auth.
+## Wersja testowa
 
-## Jak działa aplikacja
+Aplikację można przetestować pod adresem:
 
-Codzienna ścieżka użytkownika jest dostępna jako jeden prowadzony „Dzisiejszy wpis”:
+**[Otwórz AkuCheckHome](https://akucheckhome.aniasieradzan.chatgpt.site)**
 
-1. **Samopoczucie** — swobodny opis dnia, maksymalnie 2000 znaków.
-2. **Check-in** — ocena snu, wyspania, energii, stresu, nastroju i napięcia oraz zapis objawów.
-3. **Badanie 12 pulsów** — wartości dla 12 meridianów w skali od `-2` do `+2`, wraz z instruktażem wideo.
-4. **Podsumowanie** — stan zapisanych części oraz interpretacja Entry–Exit pokazywana dopiero po zakończeniu badania pulsów.
-5. **Pomóż sobie** — uporządkowane edukacyjne wskazówki wybrane na podstawie zapisanych obserwacji.
-6. **Historia** — historia, porównanie wpisów i możliwość otwarcia wybranego dnia.
+Witryna jest publicznie dostępna, ale dane użytkownika są chronione przez logowanie Supabase.
 
-Skale check-inu nie mają domyślnych odpowiedzi — użytkownik świadomie wybiera każdą ocenę. Datę wpisu można wybrać w nagłówku, przy czym aplikacja nie pozwala tworzyć wpisów z przyszłości. Mobilna nawigacja obejmuje cztery główne obszary: Dzisiaj, Wpis, Wsparcie i Historia.
+## Najważniejsze funkcje
 
-Dodatkowo aplikacja udostępnia:
+- rejestracja, logowanie i odzyskiwanie hasła przez Supabase Auth;
+- dzienny opis samopoczucia do 2000 znaków;
+- check-in obejmujący sen, energię, stres, nastrój, napięcie i objawy;
+- zapis pełnego badania 12 pulsów;
+- analiza jawnych reguł Entry–Exit;
+- edukacyjne propozycje akupresurowe oparte na lokalnej bazie wiedzy;
+- historia samopoczucia, check-inów i pulsów;
+- deterministyczny generator bezpiecznych danych syntetycznych;
+- widoki responsywne na komputer i telefon.
 
-- analizę jawnych reguł Entry–Exit;
-- wskazówki powiązane z zegarem narządów;
-- lokalnie zdefiniowane protokoły oddechowe;
-- bazę 14 meridianów i 361 klasycznych punktów;
-- responsywny interfejs na komputer i telefon;
-- generator deterministycznych danych syntetycznych do testów.
+## Źródło wiedzy o meridianach
 
-## Prywatność i sposób zapisu danych
+Jedynym źródłem właściwości punktów używanym w projekcie jest pakiet:
 
-Supabase służy obecnie do uwierzytelniania użytkowników. Wpisy samopoczucia,
-check-iny i wyniki pulsów są zapisywane w `localStorage` bieżącej przeglądarki
-w osobnym magazynie dla identyfikatora zalogowanego konta. Starszy, wspólny
-zapis `akucheckhome.health-data.v1` nie jest przypisywany automatycznie:
-zalogowany użytkownik może jawnie przejąć go z komunikatu w aplikacji, jeśli
-dane należą do jego konta.
+`14_meridianow_5_elementow_TXT_v1.zip`
 
-Oznacza to, że dane:
+Zaimportowana baza obejmuje 12 meridianów głównych, Ren Mai i Du Mai. Aktualna wersja źródła to **v1 z 08.2026**. Pliki źródłowe znajdują się w katalogu [`knowledge-base/meridians`](knowledge-base/meridians), a zasady korzystania z nich opisano w [`knowledge-base/README.md`](knowledge-base/README.md).
 
-- pozostają na danym urządzeniu i w danym profilu przeglądarki;
-- nie synchronizują się obecnie pomiędzy urządzeniami;
-- mogą zostać utracone po wyczyszczeniu danych witryny;
-- nie są jeszcze zapisywane w bazie Supabase użytkownika.
+Projekt nie powinien uzupełniać właściwości punktów wiedzą z internetu ani innymi materiałami bez wyraźnej decyzji właściciela merytorycznego.
 
-Nie należy wpisywać danych innych osób ani umieszczać sekretów i danych szczególnie wrażliwych w repozytorium.
+## Technologie
 
-## Stos technologiczny
-
-- TypeScript 5
+- TypeScript
 - React 19
-- Next.js 16 uruchamiany przez vinext
-- Supabase Auth
+- Next.js / vinext
+- Supabase Auth i Supabase Database
 - Zod
 - Drizzle ORM
-- Tailwind CSS 4 / własne style CSS
-- Cloudflare Workers / Sites
-- test runner Node.js przez `tsx --test`
+- wbudowany runner testów Node.js uruchamiany przez `tsx --test`
+- Sites / Cloudflare Workers
 
 ## Uruchomienie lokalne
 
@@ -71,64 +61,44 @@ Nie należy wpisywać danych innych osób ani umieszczać sekretów i danych szc
 
 - Node.js `>=22.13.0`
 - npm
-- projekt Supabase z włączonym logowaniem e-mail i hasłem
+- projekt Supabase
 
 ### Instalacja
 
 ```bash
 git clone https://github.com/Ordysia/AkuCheckHome.git
 cd AkuCheckHome/web
-npm ci
+npm install
 ```
 
-Skopiuj przykładową konfigurację:
-
-```bash
-cp .env.example .env.local
-```
-
-Na Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-Uzupełnij publiczne dane projektu Supabase w `web/.env.local`:
+Utwórz plik `web/.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://twoj-projekt.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=twoj_publiczny_klucz
+NEXT_PUBLIC_SUPABASE_URL=https://TWOJ-PROJEKT.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=TWOJ_PUBLICZNY_KLUCZ
 ```
 
-Uruchom serwer deweloperski:
+Następnie uruchom aplikację:
 
 ```bash
 npm run dev
 ```
 
-Adres aplikacji zostanie wyświetlony w terminalu. W ustawieniach Supabase Auth dodaj ten adres do dozwolonych adresów przekierowania, aby poprawnie działały potwierdzanie konta i odzyskiwanie hasła.
+Adres lokalny zostanie pokazany w terminalu.
 
-> [!WARNING]
-> Plik `.env.local` nie może trafić do repozytorium. Nigdy nie udostępniaj klucza secret/service-role w kodzie klienckim ani w zmiennych z prefiksem `NEXT_PUBLIC_`.
+Plik `.env.local` jest ignorowany przez Git i nie powinien być dodawany do repozytorium. Nie zapisuj w kodzie haseł, klucza secret/service-role ani innych sekretów.
 
-## Dostępne polecenia
+## Supabase
 
-Wszystkie polecenia uruchamiaj w katalogu `web/`.
+Migracja tabel danych syntetycznych znajduje się w:
 
-| Polecenie | Działanie |
-| --- | --- |
-| `npm run dev` | uruchamia środowisko deweloperskie |
-| `npm run build` | buduje wersję produkcyjną |
-| `npm run start` | uruchamia zbudowaną aplikację |
-| `npm run lint` | sprawdza kod przez ESLint |
-| `npm test` | uruchamia testy danych syntetycznych i pełny build |
-| `npm run test:synthetic` | uruchamia tylko testy generatora |
-| `npm run seed:synthetic` | generuje lokalne dane testowe |
-| `npm run db:generate` | generuje migracje Drizzle |
+[`web/supabase/migrations/20260802123000_synthetic_health_data.sql`](web/supabase/migrations/20260802123000_synthetic_health_data.sql)
+
+Tabele syntetyczne mają włączone RLS i nie udostępniają polityk zapisu aplikacji klienckiej. Do ich zasilenia wymagany jest jawnie podany klucz secret oraz flaga bezpieczeństwa.
 
 ## Dane syntetyczne
 
-Generator tworzy powtarzalne rekordy testowe oznaczone `isSynthetic: true`. Domyślnie zapisuje je w ignorowanym przez Git katalogu `web/synthetic-output/`.
+Generator tworzy deterministyczne dane testowe oznaczone `isSynthetic: true`.
 
 ```bash
 npm run seed:synthetic
@@ -137,67 +107,47 @@ npm run seed:synthetic -- --scenario=kid-li
 npm run seed:synthetic -- --clean
 ```
 
-Dostępne cele zapisu:
+Domyślnie dane trafiają do lokalnego katalogu `synthetic-output/`, który jest ignorowany przez Git. Szczegóły: [`web/docs/synthetic-data.md`](web/docs/synthetic-data.md).
+
+## Testy i weryfikacja
 
 ```bash
-npm run seed:synthetic -- --target=export
-npm run seed:synthetic -- --target=local
-npm run seed:synthetic -- --target=supabase
+cd web
+npm test
 ```
 
-Zasilenie Supabase wymaga wcześniejszego zastosowania migracji [`web/supabase/migrations/20260802123000_synthetic_health_data.sql`](web/supabase/migrations/20260802123000_synthetic_health_data.sql) oraz lokalnego ustawienia:
+Polecenie uruchamia testy generatora danych syntetycznych oraz pełny build aplikacji.
 
-```env
-SUPABASE_SECRET_KEY=uzupelnij_lokalnie
-ALLOW_SYNTHETIC_SEED=true
-ALLOW_SYNTHETIC_SUPABASE_URL=https://twoj-projekt-testowy.supabase.co
-# Tylko dla --target=supabase --clean:
-CONFIRM_SYNTHETIC_CLEAN=DELETE SYNTHETIC DATA
+Oddzielne komendy:
+
+```bash
+npm run test:synthetic
+npm run build
+npm run lint
 ```
-
-Migracja dotyczy wyłącznie danych syntetycznych. Tabele mają włączone RLS i celowo nie udostępniają zapisu aplikacji klienckiej. Pełny opis generatora znajduje się w [`web/docs/synthetic-data.md`](web/docs/synthetic-data.md).
-
-## Baza wiedzy
-
-Jedynym zatwierdzonym źródłem właściwości punktów w projekcie jest pakiet `14_meridianow_5_elementow_TXT_v1.zip`, przekazany przez właściciela merytorycznego. Zaimportowane materiały obejmują 12 meridianów głównych, Ren Mai, Du Mai i 361 klasycznych punktów.
-
-Pliki źródłowe znajdują się w [`knowledge-base/meridians`](knowledge-base/meridians). Reguły korzystania z materiałów opisuje [`knowledge-base/README.md`](knowledge-base/README.md), a pochodzenie źródeł — [`knowledge-base/SOURCES.md`](knowledge-base/SOURCES.md).
-
-Opisów punktów nie należy uzupełniać wiedzą modelu, internetu ani innymi publikacjami bez wyraźnej decyzji właściciela merytorycznego.
 
 ## Struktura repozytorium
 
 ```text
 AkuCheckHome/
-├── knowledge-base/          # zatwierdzone treści, reguły i materiały instruktażowe
-│   ├── breathing/           # dokumentacja protokołów oddechowych
-│   ├── instructional-videos/# materiały do badania pulsów
-│   ├── meridians/           # źródłowe opisy 14 meridianów
-│   └── rules/               # reguły Entry–Exit i zegara narządów
+├── knowledge-base/       # zatwierdzona baza meridianów i reguły
 └── web/
-    ├── app/                 # interfejs, widoki i reguły aplikacji
-    ├── docs/                # dokumentacja techniczna
-    ├── lib/                 # modele danych, walidacja i klient Supabase
-    ├── public/              # statyczne zasoby i film instruktażowy
-    ├── scripts/synthetic/   # generator danych syntetycznych
-    ├── supabase/migrations/ # migracje tabel testowych
-    └── tests/               # testy automatyczne
+    ├── app/              # interfejs i logika aplikacji
+    ├── docs/             # dokumentacja techniczna
+    ├── lib/              # wspólne modele i walidacja
+    ├── scripts/          # generator danych syntetycznych
+    ├── supabase/         # migracje Supabase
+    └── tests/            # testy automatyczne
 ```
 
-## Testy i kontrola jakości
+## Bezpieczeństwo i prywatność
 
-Przed wysłaniem zmian uruchom:
+- Nie wpisuj danych innych osób w polach samoobserwacji.
+- Nie umieszczaj plików `.env*` ani sekretów Supabase w repozytorium.
+- Dane syntetyczne muszą mieć `isSynthetic: true`.
+- Generator blokuje przypadkowe uruchomienie w środowisku produkcyjnym.
+- Błędne rekordy testowe są odrzucane przez walidację.
 
-```bash
-cd web
-npm run lint
-npm test
-```
+## Status projektu
 
-`npm test` obejmuje testy generatora danych syntetycznych i produkcyjny build aplikacji.
-
-## Wersja i status
-
-Wersja pakietu: **1.2.0**. Stabilnym punktem odniesienia jest tag [`v1.2`](https://github.com/Ordysia/AkuCheckHome/tree/v1.2).
-
-Projekt jest aktywnie rozwijany.
+Projekt jest aktywnie rozwijany. Stabilny punkt odniesienia dla tej wersji stanowi tag [`v1.2`](https://github.com/Ordysia/AkuCheckHome/tree/v1.2).

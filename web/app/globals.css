@@ -828,32 +828,10 @@ button {
   padding-top: 20px;
 }
 
-.score-picker > strong,
-.score-picker legend {
+.score-picker > strong {
   display: block;
   margin-bottom: 12px;
   font-size: 12px;
-}
-
-/* Czytelność treści użytkowych — etykiety dekoracyjne pozostają kompaktowe. */
-.auth-intro,
-.auth-form label,
-.auth-submit,
-.auth-links p,
-.auth-links button,
-.auth-message,
-.auth-disclaimer,
-.wellbeing-heading > div > p:last-child,
-.wellbeing-field,
-.wellbeing-meta small,
-.wellbeing-actions > span,
-.support-description,
-.support-reason,
-.support-warning,
-.compare-card p,
-.rule-card > p,
-.medical-note {
-  font-size: max(13px, 0.8125rem);
 }
 
 .number-buttons {
@@ -1463,52 +1441,6 @@ button {
   display: none;
 }
 
-.auth-local-note,
-.local-data-note {
-  color: #365e52;
-  background: #e8eee5;
-  border: 1px solid rgba(49, 95, 80, .18);
-  border-radius: 11px;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.auth-local-note { margin: -12px 0 22px; padding: 11px 13px; }
-.local-data-note { margin-bottom: 16px; padding: 12px 15px; }
-.date-picker { display: grid; gap: 3px; color: var(--muted); font-size: 12px; font-weight: 700; }
-.date-picker input { width: 150px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fffdf7; font: inherit; }
-.entry-header { margin-bottom: 18px; padding: 24px; border-radius: 20px; background: linear-gradient(135deg, #e2e9dc, #f7f1e5); }
-.entry-header h2, .entry-summary h2 { margin: 3px 0 7px; font-family: var(--font-serif), serif; font-size: clamp(32px, 4vw, 48px); font-weight: 500; }
-.entry-header > div > p:last-child, .entry-summary > p { color: var(--muted); font-size: 15px; line-height: 1.55; }
-.entry-steps { margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; list-style: none; }
-.entry-steps button { width: 100%; min-height: 48px; padding: 8px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); background: rgba(255,255,255,.55); font-size: 12px; cursor: pointer; }
-.entry-steps button span { margin-right: 6px; font-weight: 900; }
-.entry-steps .active button { color: #fff; border-color: var(--green-dark); background: var(--green-dark); }
-.skip-step { margin-top: 12px; }
-.score-picker { min-width: 0; margin: 0; padding: 0; border: 0; }
-.score-picker legend { padding: 0; font-weight: 800; }
-.form-validation { color: #76532c; font-size: 14px; line-height: 1.5; }
-.entry-summary { padding: clamp(22px, 4vw, 42px); border: 1px solid var(--line); border-radius: 22px; background: #fcf8ef; }
-.summary-status-grid { margin: 24px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.summary-status-grid button { padding: 18px; display: grid; gap: 6px; text-align: left; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); background: #fffdf8; cursor: pointer; }
-.summary-status-grid strong { font-size: 16px; }
-.summary-status-grid span { color: var(--muted); font-size: 13px; }
-.pulse-summary-result { margin: 20px 0; padding: 18px; border-radius: 14px; background: #e8eee5; }
-.pulse-summary-result h3 { margin: 0 0 8px; font-family: var(--font-serif), serif; font-size: 24px; }
-.pulse-summary-result p, .pulse-summary-result li { font-size: 14px; line-height: 1.55; }
-.primary-support > .eyebrow { margin: 20px 0 8px; }
-.support-more { border-top: 1px solid var(--line); }
-.support-more summary { padding: 18px 4px; display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-serif), serif; font-size: 21px; cursor: pointer; }
-.support-more summary span { color: var(--green); font-family: var(--font-sans), sans-serif; font-size: 13px; }
-.history-list { margin-top: 36px; }
-.history-list ul { margin: 0; padding: 0; display: grid; gap: 9px; list-style: none; }
-.history-list li { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 13px; background: #fcf8ef; }
-.history-list li div { display: grid; gap: 4px; }
-.history-list li strong { font-size: 15px; }
-.history-list li span { color: var(--muted); font-size: 13px; }
-.history-list li button { padding: 9px 13px; border: 1px solid var(--green); border-radius: 9px; color: var(--green); background: transparent; font-weight: 800; cursor: pointer; }
-
-button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid #c18a48; outline-offset: 3px; }
-
 @media (max-width: 900px) {
   .app-shell {
     display: block;
@@ -1555,7 +1487,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .mobile-nav {
     position: fixed;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     inset: auto 0 0;
     z-index: 10;
     padding: 8px 5px max(8px, env(safe-area-inset-bottom));
@@ -1571,8 +1503,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
     display: grid;
     justify-items: center;
     gap: 3px;
-    min-height: 48px;
-    font-size: 12px;
+    font-size: 7px;
   }
 
   .mobile-nav button span {
@@ -1597,10 +1528,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .wellbeing-field textarea { min-height: 240px; padding: 16px; }
   .wellbeing-actions { align-items: stretch; flex-direction: column-reverse; }
   .wellbeing-actions .primary { width: 100%; }
-  .entry-steps { grid-template-columns: 1fr 1fr; }
-  .summary-status-grid { grid-template-columns: 1fr; }
-  .entry-header { padding: 20px 18px; }
-  .history-list li { align-items: stretch; flex-direction: column; }
 }
 
 @media (max-width: 900px) {
@@ -3111,14 +3038,4 @@ body {
     padding: 20px 18px;
     border-radius: 15px;
   }
-}
-
-/* Końcowa warstwa dostępności typografii. */
-.auth-intro, .auth-form label, .auth-submit, .auth-links p, .auth-links button,
-.auth-message, .auth-disclaimer, .wellbeing-heading > div > p:last-child,
-.wellbeing-field, .wellbeing-meta small, .wellbeing-actions > span,
-.support-description, .support-reason, .support-warning, .compare-card p,
-.rule-card > p, .medical-note, .clock-disclaimer, .source-note {
-  font-size: 13px;
-  line-height: 1.5;
 }

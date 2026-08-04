@@ -136,7 +136,7 @@ export function AuthGate({
             regeneracji i wyników 12 pulsów.
           </p>
         </div>
-        <p className="auth-privacy">Twoje dane zdrowotne pozostają przypisane do Twojego konta.</p>
+        <p className="auth-privacy">Twoje dane zdrowotne są prywatnie synchronizowane między urządzeniami na Twoim koncie.</p>
       </section>
 
       <section className="auth-panel">
@@ -148,6 +148,9 @@ export function AuthGate({
           <p className="eyebrow green">{copy.eyebrow}</p>
           <h2>{copy.title}</h2>
           <p className="auth-intro">{copy.description}</p>
+          <p className="auth-local-note">
+            Wpisy są przypisane do konta i synchronizują się między Twoimi urządzeniami.
+          </p>
 
           <form onSubmit={submit} className="auth-form">
             {mode !== "recovery" && (

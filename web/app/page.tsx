@@ -1628,36 +1628,6 @@ function RulesView() {
   );
 }
 
-function ActionCard({
-  id,
-  label,
-  title,
-  description,
-  color,
-  completed,
-  toggle,
-}: {
-  id: string;
-  label: string;
-  title: string;
-  description: string;
-  color: string;
-  completed: boolean;
-  toggle: (id: string) => void;
-}) {
-  return (
-    <article className={`action-card ${color} ${completed ? "completed" : ""}`}>
-      <span className="action-orb">{completed ? "✓" : "·"}</span>
-      <p className="eyebrow">{label}</p>
-      <h3>{title}</h3>
-      <p>{description}</p>
-      <button onClick={() => toggle(id)}>
-        {completed ? "Wykonano" : "Wykonaj teraz"} <span>→</span>
-      </button>
-    </article>
-  );
-}
-
 function viewTitle(view: View) {
   return {
     home: "Dzień dobry",
